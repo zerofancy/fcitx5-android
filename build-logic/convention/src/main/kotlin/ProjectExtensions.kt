@@ -101,6 +101,7 @@ val Project.signKeyAlias: String?
     get() = epn("SIGN_KEY_ALIAS", "signKeyAlias")
 
 fun NamedDomainObjectContainer<out ApkSigningConfig>.fromProjectEnv(project: Project): ApkSigningConfig? {
+    if (project.keyringSigningEnabled) return fromKeyring(project)
     val keyFile = project.signKey ?: return null
     val name = "release"
     return findByName(name) ?: create(name) {

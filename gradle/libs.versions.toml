@@ -9,8 +9,10 @@ test = "1.7.0"
 splitties = "3.0.0"
 aboutlibraries = "14.2.1"
 arrow = "2.2.3"
+gradleKeyring = "0.2"
 
 [libraries]
+gradle-keyring = { module = "me.okonecny.gradle-keyring:me.okonecny.gradle-keyring.gradle.plugin", version.ref = "gradleKeyring" }
 android-gradlePlugin = { group = "com.android.tools.build", name = "gradle", version.ref = "androidGradlePlugin" }
 android-desugarJDKLibs = { group = "com.android.tools", name = "desugar_jdk_libs", version = "2.1.5" }
 kotlin-gradlePlugin = { group = "org.jetbrains.kotlin", name = "kotlin-gradle-plugin", version.ref = "kotlin" }
@@ -64,6 +66,7 @@ kotlinpoet-ksp = { module = "com.squareup:kotlinpoet-ksp", version = "2.3.0" }
 ksp = { module = "com.google.devtools.ksp:symbol-processing-api", version.ref = "ksp" }
 
 [plugins]
+keyring = { id = "me.okonecny.gradle-keyring", version.ref = "gradleKeyring" }
 android-application = { id = "com.android.application", version.ref = "androidGradlePlugin" }
 android-library = { id = "com.android.library", version.ref = "androidGradlePlugin" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }

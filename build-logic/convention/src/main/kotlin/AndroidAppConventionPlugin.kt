@@ -32,6 +32,7 @@ class AndroidAppConventionPlugin : AndroidBaseConventionPlugin() {
         target.pluginManager.apply(target.libs.plugins.android.application.get().pluginId)
 
         super.apply(target)
+        target.registerSigningVerification()
 
         target.extensions.configure<ApplicationExtension> {
             defaultConfig {

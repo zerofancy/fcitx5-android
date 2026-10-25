@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gradle 钥匙圈签名 · fcitx5-android</title>
+<style>
+body{max-width:880px;margin:48px auto;padding:0 24px;color:#223047;background:#f6f8fc;font:16px/1.75 system-ui,sans-serif}h1,h2{line-height:1.3}h2{margin-top:36px}pre{overflow:auto;background:#162239;color:#edf3ff;padding:20px;border-radius:12px;font-size:14px}code{font-family:ui-monospace,monospace}a{color:#1765ba}.note{border-left:4px solid #4380d5;padding:12px 20px;background:#eaf1fc}table{border-collapse:collapse;width:100%}td,th{text-align:left;padding:10px;border-bottom:1px solid #ccd7e7}
+</style>
+<h1>Gradle 钥匙圈签名</h1>
+<p>主应用与所有扩展插件共用此配置。keystore 保存在仓库外；系统钥匙圈保存 keystore 密码和私钥密码。使用 <a href="https://plugins.gradle.org/plugin/me.okonecny.gradle-keyring">Gradle Keyring 0.2</a>。</p>
+<h2>1. 本机配置</h2>
+<p>将 keystore 保存在仓库外，例如用户目录的 <code>~/.android/keystores/</code>。Linux / macOS 建议目录权限为 700、文件权限为 600。请保留备份。</p>
+<p>在仓库根目录的 <code>local.properties</code> 加入以下配置，并填写实际文件绝对路径和私钥别名。此文件已被 Git 忽略。初始化成功前保持关闭：</p>
+<pre>keyringSigning=false
+keyringStoreFile=/absolute/path/to/release.jks
+keyringKeyAlias=your-key-alias</pre>
+<h2>2. 初始化密码</h2>
+<p>在已登录桌面、系统钥匙圈可用的本机终端运行：</p>
+<pre># 在仓库根目录执行
+./scripts/init-keyring-signing.sh</pre>
+<p>脚本先隐藏输入两个密码，私钥密码留空表示与 keystore 密码相同，再分别调用插件任务保存。密码通过短期环境变量传给 Gradle，不进入命令行参数、命令历史或项目文件。两个密码都保存成功后，将 <code>local.properties</code> 中的开关改成 <code>keyringSigning=true</code>。</p>
+<p>Windows 或需要单独更新密码时可直接使用插件任务；插件从标准输入读取密码。脚本适用于 Bash（Linux / macOS）：</p>
+<pre>./gradlew --no-daemon --no-configuration-cache --console=plain -PkeyringSigning=false :setSecretValue --name=android_store_password
+./gradlew --no-daemon --no-configuration-cache --console=plain -PkeyringSigning=false :setSecretValue --name=android_key_password</pre>
+<p>Linux 需要会话 D-Bus 和已解锁的 Secret Service / 兼容钥匙圈服务。首次访问可能出现桌面授权或解锁提示。</p>
+<h2>3. 验证并打包</h2>
+<pre># 验证 keystore 密码、私钥密码、别名及证书链；不编译 APK
+./gradlew --no-configuration-cache :app:verifyReleaseSigning
+
+# 构建主应用
+./gradlew --no-configuration-cache :app:assembleRelease
+
+# 构建所有扩展插件
+./gradlew --no-configuration-cache assembleReleasePlugins</pre>
+<p>也可保持本机开关关闭，每次用 <code>-PkeyringSigning=true</code> 启用。该参数优先于 <code>local.properties</code>；文件路径与别名也可用同名 <code>-P</code> 参数覆盖。</p>
+<h2>行为与边界</h2>
+<table><tr><th>模式</th><th>行为</th></tr>
+<tr><td>keyringSigning=false / 未配置</td><td>保留原有 SIGN_KEY_FILE、SIGN_KEY_BASE64、SIGN_KEY_ALIAS、SIGN_KEY_PWD 及对应项目属性签名逻辑；无原配置时 Release 不签名。Debug 使用默认调试签名。</td></tr>
+<tr><td>keyringSigning=true</td><td>使用本机路径、别名和两个钥匙圈密码。信息缺失时直接报错，不退回未签名 Release。</td></tr></table>
+<p>钥匙圈秘密名为 <code>android_store_password</code> 和 <code>android_key_password</code>，服务名为 <code>Gradle Project fcitx5-android</code>。更改根项目名需要重新录入。插件读取顺序为项目属性、环境变量、系统钥匙圈；对应属性为 <code>signStorePassword</code> / <code>signKeyPassword</code>，环境变量为 <code>SIGN_STORE_PASSWORD</code> / <code>SIGN_KEY_PASSWORD</code>。</p>
+<div class="note">启用本机钥匙圈签名后，Gradle 配置阶段（包括 IDE 同步）会读取密码。请保持配置缓存关闭；代码会拒绝此模式下的配置缓存请求，避免把签名密码写入配置缓存。初始化和管理凭据时使用 <code>-PkeyringSigning=false --no-configuration-cache</code>，避免密码尚未存在时阻塞任务。</div>
+<p>查看配置名可运行 <code>./gradlew -PkeyringSigning=false --no-configuration-cache :listSecretConfigs</code>。不要使用 <code>listSecretValues</code>，它会输出密码。keystore 与钥匙圈密码均需自行备份；只有其中一个无法完成签名。</p>
+</html>
