@@ -321,4 +321,23 @@
     <string name="keyboard_height_percent_base">Keyboard height percent base</string>
     <string name="display_metrics">Display metrics (Resources.getDisplayMetrics)</string>
     <string name="real_size">Real size (Display.getRealSize)</string>
+
+    <!-- Manual update checks -->
+    <string name="check_updates">Check for updates</string>
+    <string name="check_updates_summary">Tap to check the latest version via zp.ntutn.top</string>
+    <string name="checking_updates">Checking for updates…</string>
+    <string name="update_available">New version available</string>
+    <string name="update_current">You are up to date</string>
+    <string name="update_unsupported_arch">Update checks are not supported for this installation architecture</string>
+    <string name="update_not_configured">This software is not configured on the update service yet</string>
+    <string name="update_no_package">No update package is available for this architecture</string>
+    <string name="update_conflict">Conflicting update information. Please try again later.</string>
+    <string name="update_failed">Update check failed. Please try again later.</string>
+    <string name="update_network_error">Cannot connect to the update service. Check your network and try again.</string>
+    <string name="update_invalid_response">Invalid update information. Please try again later.</string>
+    <string name="update_versions">Current version: %1$s\nLatest version: %2$s</string>
+    <string name="update_distribution">Release: %1$s</string>
+    <string name="update_external_download">The download link will open in your browser or another supported app.</string>
+    <string name="update_open_download">Go to download</string>
+    <string name="update_no_browser">No app is available to open the download link</string>
 </resources>

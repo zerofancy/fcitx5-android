@@ -66,7 +66,7 @@ class ThemeSerializationTest {
 
     @Test
     fun version2() {
-        // Version 2.0
+        // Version 2.0 predates the candidate color properties added in 2.1.
         val raw = """
             {
                "name":"",
@@ -98,7 +98,13 @@ class ThemeSerializationTest {
             }
         """.trimIndent()
         val (decoded, migrated) = raw.toCustomTheme()
-        Assert.assertEquals("Migration shouldn't happen", false, migrated)
-        Assert.assertEquals("Round trip", decoded, decoded.toJson().toCustomTheme().first)
+        Assert.assertTrue("Version 2.0 should migrate to the current format", migrated)
+        Assert.assertEquals("Candidate text inherits key text color", -1, decoded.candidateTextColor)
+        Assert.assertEquals("Candidate label inherits key text color", -1, decoded.candidateLabelColor)
+        Assert.assertEquals("Candidate comment inherits alternate key text color", -905969665, decoded.candidateCommentColor)
+
+        val (roundTripped, migratedAgain) = decoded.toJson().toCustomTheme()
+        Assert.assertEquals("Round trip preserves migrated theme", decoded, roundTripped)
+        Assert.assertFalse("Saved current-format theme should not migrate again", migratedAgain)
     }
 }

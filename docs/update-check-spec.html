@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fcitx5 Android · 更新检查 Spec</title>
+<style>
+:root{color-scheme:light;--ink:#1b2e42;--muted:#607286;--line:#dbe4ed;--accent:#176e66}*{box-sizing:border-box}body{margin:0;background:#f0f4f8;color:var(--ink);font:16px/1.8 system-ui,sans-serif}main{max-width:1060px;margin:32px auto;padding:40px 48px;background:#fff;border:1px solid var(--line);border-radius:18px}h1{font-size:34px;line-height:1.3}h2{margin-top:34px;padding-top:18px;border-top:1px solid var(--line);font-size:23px}h3{font-size:18px}.meta{color:var(--muted)}.badge{display:inline-block;background:#e3f3ed;color:var(--accent);padding:4px 12px;border-radius:20px;font-size:14px}.callout{padding:16px 20px;background:#edf8f5;border-left:4px solid var(--accent);margin:22px 0}table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:10px 12px;border:1px solid var(--line);text-align:left;vertical-align:top}th{background:#f3f7fa}code{background:#edf2f6;border-radius:4px;padding:2px 5px;overflow-wrap:anywhere}pre{background:#192d40;color:#e9f2fa;padding:20px;border-radius:10px;overflow:auto;font-size:14px;line-height:1.7}pre code{padding:0;background:none}a{color:#11668f}.flow{display:flex;flex-wrap:wrap;gap:10px;align-items:center}.step{padding:10px 15px;border:1px solid var(--line);border-radius:9px;background:#f8fafc}.mock{max-width:460px;border:1px solid var(--line);border-radius:14px;padding:22px;background:#fafcfe;margin:18px 0}.mock h3{margin-top:0}.actions{text-align:right;color:var(--accent);word-spacing:18px;margin-top:24px}.scroll{overflow:auto}li{margin:6px 0}@media(max-width:720px){main{margin:0;padding:24px 18px;border:0;border-radius:0}h1{font-size:28px}table{min-width:640px}}@media print{main{margin:0;padding:0;border:0}body{background:#fff}h2,h3{break-after:avoid}tr,.mock{break-inside:avoid}}
+</style>
+</head>
+<body><main>
+<span class="badge">已确认 · 首版范围</span>
+<h1>更新检查与外部下载跳转</h1>
+<p class="meta">Fcitx5 for Android · 2026-10-29 · Spec v2</p>
+<div class="callout"><strong>目标：</strong>用户在“关于”页主动检查更新；发现更高版本时展示版本信息，点击“前往下载”交给系统打开下载链接。首版不实现应用内下载、安装或后台自动检查。</div>
+<h2>1. 范围与默认决策</h2>
+<ul>
+<li>在“关于 → 版本”分类新增“检查更新”，保留现有版本、Git Hash 和构建时间信息。</li>
+<li>仅点击后发起一次请求；应用启动、输入法启用和键盘输入过程均不触发网络访问。无定时任务、通知、更新忽略记录或结果缓存。</li>
+<li>成功且服务端 versionCode 大于本地实际安装版本号时，显示更新弹窗；否则提示“当前已是最新版本”。服务端版本较低也不提供降级入口。</li>
+<li>点击“前往下载”后通过 ACTION_VIEW 打开服务返回的绝对 HTTP/HTTPS 链接，由系统或浏览器处理；不申请存储或安装未知应用权限。</li>
+<li>正式版与 Debug 构建均支持更新检查，使用独立的软件内部名：正式版为 <code>fcitx5-android</code>，调试版为 <code>fcitx5-android-debug</code>。按构建类型选择对应序列，不跨序列回退。</li>
+</ul>
+<h2>2. 用户流程与状态</h2>
+<div class="flow"><span class="step">关于 → 检查更新</span><span>→</span><span class="step">检查中…</span><span>→</span><span class="step">新版 / 已是最新版 / 失败</span><span>→</span><span class="step">有新版时点击前往下载</span></div>
+<div class="scroll"><table>
+<tr><th>状态</th><th>展示与行为</th></tr>
+<tr><td>初始</td><td>“检查更新”；摘要“点击检查最新版本”。不主动联网。</td></tr>
+<tr><td>请求进行中</td><td>摘要改为“正在检查更新…”并禁用重复点击。网络操作不阻塞主线程。</td></tr>
+<tr><td>发现新版</td><td>恢复入口，弹出版本信息及“取消 / 前往下载”。取消后不保存忽略记录，再次点击可重新检查。</td></tr>
+<tr><td>无更高版本</td><td>恢复入口，摘要显示“当前已是最新版本”，并给出短提示。</td></tr>
+<tr><td>失败或不支持</td><td>恢复入口并显示相应提示；允许用户再次手动检查。失败不显示“已是最新版”。不自动重试。</td></tr>
+<tr><td>离开页面 / 旋转</td><td>请求随页面生命周期取消或丢弃结果，不在已销毁页面弹窗；关闭相关弹窗，新页面恢复初始状态。</td></tr>
+</table></div>
+<div class="mock"><h3>发现新版本 0.1.4</h3><p>当前版本：0.1.3-release<br>最新版本：0.1.4<br>发布标题：Fcitx5 Android 0.1.4</p><p class="meta">将在浏览器或系统支持的应用中打开下载链接。</p><div class="actions">取消　 前往下载</div></div>
+<p class="meta">上图为文案示意，版本号和发布标题均为示例。标题为空时省略；所有服务端文本按纯文本展示，不渲染 HTML。首版不展示下载进度、安装按钮或更新日志（接口未提供更新日志字段）。</p>
+<h2>3. 接口约定</h2>
+<p>采用引用聊天“查找软件更新接口”中已实现的 API，当前服务源码和接入文档均已核对。服务域名为 <a href="https://zp.ntutn.top">zp.ntutn.top</a>。</p>
+<pre><code>GET https://zp.ntutn.top/api/v1/updates
+    ?software=fcitx5-android
+    &amp;os=Android
+    &amp;arch=ARM64
+    &amp;packageType=apk
+Accept: application/json</code></pre>
+<div class="scroll"><table>
+<tr><th>参数</th><th>首版取值</th></tr>
+<tr><td>software</td><td>正式版使用 <code>fcitx5-android</code>，Debug 使用 <code>fcitx5-android-debug</code>，集中定义并按构建类型选择。此处为软件内部名，不是展示名，也不是自动取 applicationId。</td></tr>
+<tr><td>os</td><td><code>Android</code>，区分大小写。</td></tr>
+<tr><td>arch</td><td>已安装 APK 为 arm64-v8a 时使用 <code>ARM64</code>；为 x86_64 时使用 <code>X86_64</code>。</td></tr>
+<tr><td>packageType</td><td><code>apk</code>，固定查询，不回退到其他类型。</td></tr>
+</table></div>
+<p>不传当前版本号：接口只查询最新包，版本比较在客户端完成。按完整四元组精确查询；200 响应中 <code>items</code> 非空时，始终选择服务端返回顺序中的第一项（<code>items[0]</code>），多项结果不视为错误，不重新排序或寻找更高版本。校验第一项的 software、os、arch、packageType 与请求一致后，再解析版本并比较；第一项无效时提示失败，不尝试后续项。空数组视为无效响应。</p>
+<pre><code>{
+  "items": [{
+    "software": "fcitx5-android",
+    "os": "Android",
+    "arch": "ARM64",
+    "packageType": "apk",
+    "latest": {
+      "versionCode": "122",
+      "versionName": "0.1.4",
+      "distributionTitle": "Fcitx5 Android 0.1.4",
+      "packageType": "apk",
+      "downloadUrl": "https://example.org/fcitx5-android.apk"
+    }
+  }]
+}</code></pre>
+<p class="meta">以上为客户端消费字段示例，省略接口其他字段；客户端容忍新增字段。接口中的 64 位整数使用十进制字符串传输。</p>
+<h2>4. 版本、架构与发布一致性</h2>
+<ul>
+<li><strong>比较依据：</strong>从 PackageManager 获取当前安装包的 longVersionCode（兼容旧 Android 的 versionCode），将服务端 versionCode 严格解析为正 Long 后比较。不能使用 versionName、字符串顺序或 BuildConfig 默认版本号比较。</li>
+<li><strong>原因：</strong>项目按 ABI 修改 APK 的 versionCode，当前规则为 <code>baseVersionCode × 10 + ABI ID</code>，ARM64 的 ID 为 2，X86_64 的 ID 为 4。当前 baseVersionCode 为 11，分别对应 112、114；发布时必须填写 APK 的实际值。</li>
+<li><strong>架构识别：</strong>基于当前安装的 native 库 ABI 判断，不单凭设备首选 ABI。无法可靠确定时提示“不支持此安装包的更新检查”，不猜测架构。</li>
+<li><strong>32 位边界：</strong>仓库支持 armeabi-v7a / x86，但服务当前仅支持 ARM64 / X86_64。32 位安装包提示“更新服务暂不支持此架构”，不请求 64 位包，也不自动迁移架构。</li>
+<li><strong>发布约束：</strong>同一更新序列保持相同包名与签名，递增实际 versionCode。正式版序列发布正式包，Debug 序列发布调试包；两个软件内部名分别维护版本和下载链接，比较各自安装包的实际 versionCode。客户端首版不下载 APK，因此不能预先验证远端签名；发布方负责链接与包的一致性。</li>
+</ul>
+<h2>5. 错误与网络处理</h2>
+<div class="scroll"><table>
+<tr><th>情况</th><th>用户提示 / 行为</th></tr>
+<tr><td>404 SOFTWARE_NOT_FOUND</td><td>“更新服务尚未配置此软件”，不能当作无更新。</td></tr>
+<tr><td>404 NO_MATCHING_PACKAGE</td><td>“暂无适用于此架构的更新包”。</td></tr>
+<tr><td>409 AMBIGUOUS_LATEST</td><td>“更新信息存在冲突，请稍后重试”，不选择下载地址。</td></tr>
+<tr><td>400、429、5xx、其他 HTTP 错误</td><td>“检查更新失败，请稍后重试”；可附 HTTP 状态码，不自动重试。</td></tr>
+<tr><td>无网络、DNS/TLS 错误、超时</td><td>“无法连接更新服务，请检查网络后重试”。</td></tr>
+<tr><td>非 JSON、空结果，或第一项缺失必需字段、版本溢出、维度不匹配</td><td>“更新信息无效，请稍后重试”。允许未来扩展字段。</td></tr>
+<tr><td>非法下载链接</td><td>只接受有主机名的绝对 HTTP/HTTPS 地址，拒绝 file、intent、javascript 等 scheme；不提供跳转按钮。</td></tr>
+<tr><td>系统没有可打开链接的应用</td><td>捕获 ActivityNotFoundException，提示“没有可打开下载链接的应用”，保留当前页面。</td></tr>
+</table></div>
+<p>使用 HTTPS 请求元数据；连接和读取各设置 10 秒超时、响应体大小上限 64 KiB，拒绝接口重定向。取消检查不显示失败提示。进入下载链接后由外部应用处理后续跳转和下载。</p>
+<h2>6. 实现落点与权限</h2>
+<div class="scroll"><table>
+<tr><th>位置</th><th>职责</th></tr>
+<tr><td>AboutFragment.kt</td><td>新增检查入口，处理状态、生命周期、更新弹窗和 ACTION_VIEW 跳转。</td></tr>
+<tr><td>data/update/ 下独立组件</td><td>集中保存正式版 / Debug 软件内部名并按构建类型选择，完成 ABI 映射、HTTP 请求、响应解析和版本比较；协议解析与 UI 分离，便于测试。</td></tr>
+<tr><td>AndroidManifest.xml</td><td>新增 INTERNET 普通权限，无运行时权限弹窗。首版不新增存储、通知、安装 APK 权限。</td></tr>
+<tr><td>values / values-zh-rCN / values-zh-rTW</td><td>提供英文、简体中文和繁体中文文案，其余语言回退英文。</td></tr>
+</table></div>
+<p>复用现有协程、kotlinx.serialization 和平台 HttpURLConnection，不引入新的网络库。网络请求放在 IO 调度器中，UI 在主线程更新。</p>
+<p>手动检查只提交软件、系统、架构和包类型，不上传输入内容、剪贴板、词库或设备标识。设置页应说明检查会访问 zp.ntutn.top；发布说明同步说明新增联网能力。</p>
+<h2>7. 验收标准</h2>
+<ol>
+<li>打开关于页不发请求；点击后一次只允许一个检查，UI 可操作。</li>
+<li>同架构高版本弹窗；相等或较低版本均不提供更新按钮。测试 9 → 10、64 位大整数与溢出，验证数值比较。</li>
+<li>“前往下载”只触发系统外部链接打开；取消不跳转。应用内不出现下载进度、安装流程或相关权限请求。</li>
+<li>模拟 ARM64 / X86_64，确认完整查询参数和实际安装版本号；32 位 / 未识别 ABI 不请求更新。分别验证正式版与 Debug 使用各自的软件内部名、比较各自安装版本，并跳转各自下载链接；任一序列无发布记录时不回退到另一序列。</li>
+<li>覆盖多项结果：只使用第一项，即使后续项版本更高也不改选；第一项无效时失败，不使用后续项。覆盖 404 两类错误、409、503、超时、非法 JSON、错架构、空结果和危险 URL；均不误报最新版。</li>
+<li>页面退出、旋转与重复点击不导致重复弹窗、已销毁窗口访问或卡住入口；无浏览器时可正确提示。</li>
+<li>执行相关单元测试、Android 编译；正式版和 Debug 发布数据可用后，分别用对应的实际签名 APK 完成“检查 → 发现新版 → 外部打开链接”真机验证。</li>
+</ol>
+<h2>8. 当前证据与待落实条件</h2>
+<div class="callout"><strong>已核实（2026-10-29）：</strong>线上 API 能返回 JSON 错误；查询 <code>software=fcitx5-android&amp;os=Android&amp;packageType=apk</code> 返回 HTTP 404 / SOFTWARE_NOT_FOUND，Android 下载列表显示 0 次分发。因此，目前不能验证真实新版的成功路径。</div>
+<p>后台分别使用 <code>fcitx5-android</code>（正式版）和 <code>fcitx5-android-debug</code>（调试版）两个软件内部名，包类型均为 <code>apk</code>。上线前需创建两条软件记录，分别配置对应架构、实际 APK versionCode、版本名和下载链接。开发期间已复核两个内部名的 ARM64/apk 精确查询，均返回 SOFTWARE_NOT_FOUND。若已有约定内部名，应替换对应常量。本次不修改更新服务或发布数据。</p>
+<p>本 spec v2 已确认，作为首版实现与验收依据。</p>
+<p class="meta">核对来源：引用聊天“查找软件更新接口”；updater-server 的 docs/update-api.html、UpdateRoutes.kt、UpdateQuery.kt；本仓库 AboutFragment.kt、Versions.kt、NativeAppConventionPlugin.kt 和 AndroidManifest.xml；线上接口只读请求。</p>
+</main></body></html>

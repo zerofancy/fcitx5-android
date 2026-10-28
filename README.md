@@ -28,6 +28,21 @@ You can also download the **latest CI build** on our Jeninks server: [![build st
 
 In case you want Fcitx5 on other platforms: [macOS](https://github.com/fcitx-contrib/fcitx5-macos), [iOS](https://github.com/fcitx-contrib/fcitx5-ios), [HarmonyOS](https://github.com/fcitx-contrib/fcitx5-harmony), [ChromeOS](https://github.com/fcitx-contrib/fcitx5-chrome), [Windows](https://github.com/fcitx-contrib/fcitx5-windows); or [try Fcitx5 in the browser](https://fcitx-contrib.github.io/online/index.html)
 
+## Manual update checks
+
+About → Version → Check for updates queries `https://zp.ntutn.top` only when tapped.
+This adds the Android INTERNET permission. The request contains only the software
+identifier, operating system, installed architecture and package type; it does not
+send input content, clipboard data, dictionaries or device identifiers.
+Release builds use `fcitx5-android`; debug builds use `fcitx5-android-debug`.
+The service currently supports ARM64 and X86_64 APKs. When an update is available,
+“Go to download” opens its link in an external app. Downloads and installation are
+handled outside the keyboard app.
+
+Publish each software identifier separately, with the actual APK version code,
+architecture, `apk` package type and download URL. Keep each sequence's package
+name and signing certificate consistent.
+
 ## Project status
 
 ### Supported Languages

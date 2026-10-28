@@ -316,4 +316,23 @@
     <string name="emoji_skin_tone_type_6">🏿 深膚色 (Type-6)</string>
     <string name="hide_unsupported_emojis">隱藏不支援的表情</string>
     <string name="preferred_voice_input">首選語音輸入</string>
+
+    <!-- Manual update checks -->
+    <string name="check_updates">檢查更新</string>
+    <string name="check_updates_summary">點選透過 zp.ntutn.top 檢查最新版本</string>
+    <string name="checking_updates">正在檢查更新…</string>
+    <string name="update_available">發現新版本</string>
+    <string name="update_current">目前已是最新版本</string>
+    <string name="update_unsupported_arch">更新服務暫不支援此安裝套件的架構</string>
+    <string name="update_not_configured">更新服務尚未設定此軟體</string>
+    <string name="update_no_package">暫無適用於此架構的更新套件</string>
+    <string name="update_conflict">更新資訊存在衝突，請稍後重試</string>
+    <string name="update_failed">檢查更新失敗，請稍後重試</string>
+    <string name="update_network_error">無法連線更新服務，請檢查網路後重試</string>
+    <string name="update_invalid_response">更新資訊無效，請稍後重試</string>
+    <string name="update_versions">目前版本：%1$s\n最新版本：%2$s</string>
+    <string name="update_distribution">發布標題：%1$s</string>
+    <string name="update_external_download">將在瀏覽器或系統支援的應用程式中開啟下載連結。</string>
+    <string name="update_open_download">前往下載</string>
+    <string name="update_no_browser">沒有可開啟下載連結的應用程式</string>
 </resources>
