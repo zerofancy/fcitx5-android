@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>长按空格离线语音输入：最小改动调研</title>
+<style>
+:root{color-scheme:light;--ink:#172b36;--muted:#526571;--line:#dce5e8;--accent:#116b68}
+*{box-sizing:border-box}body{margin:0;background:#f3f6f5;color:var(--ink);font:16px/1.8 system-ui,-apple-system,"Noto Sans CJK SC",sans-serif}
+main{max-width:1080px;margin:auto;padding:48px 28px 72px}header{border-top:6px solid var(--accent);padding:24px 0}
+h1{font-size:32px;line-height:1.35;margin:10px 0}h2{font-size:23px;margin:0 0 16px}h3{font-size:18px;margin:20px 0 8px}
+p{margin:10px 0}.meta,small{color:var(--muted)}section{background:white;border:1px solid var(--line);border-radius:16px;padding:26px;margin:20px 0}
+.lead{font-size:19px}.callout{background:#e9f5ef;border-left:4px solid var(--accent);padding:14px 18px;margin:16px 0}
+.scroll{overflow:auto}table{width:100%;border-collapse:collapse;font-size:15px}th,td{padding:12px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}th{background:#f1f6f5}
+code{font-size:.9em;overflow-wrap:anywhere;background:#edf2f4;border-radius:4px;padding:2px 5px}a{color:#086a88;overflow-wrap:anywhere}
+li{margin:7px 0}.flow{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0}.flow span{background:#edf5f3;border:1px solid #cce0d9;border-radius:9px;padding:9px 14px}
+.badge{font-size:13px;color:#116b68;background:#e1f1eb;padding:4px 9px;border-radius:20px}footer{color:var(--muted);font-size:14px}
+@media(max-width:650px){main{padding:24px 15px}section{padding:20px 16px}h1{font-size:27px}th,td{min-width:135px}}
+@media print{body{background:white}main{max-width:none;padding:0}section{break-inside:avoid;border-radius:0}a{color:inherit}}
+</style>
+</head>
+<body><main>
+<header><span class="badge">调研结论 · 待确认方案</span>
+<h1>长按空格，离线语音输入</h1>
+<p class="lead">建议在现有 Android 层增加一个录音与识别控制器，接入 sherpa-onnx + SenseVoice Small INT8；复用空格长按设置和现有文本提交逻辑。</p>
+<p class="meta">2026-10-26 · 按普通话为主要使用场景 · 本轮仅调研与方案文档，未修改业务代码、未进行设备性能验证。</p>
+</header>
+
+<section><h2>1. 推荐方案与范围</h2>
+<div class="flow"><span>按住空格约 300 ms</span><span>震动、开始录音</span><span>松手即停止采集</span><span>本地识别整段音频</span><span>结果自动上屏</span></div>
+<p>300 ms 来自项目当前默认长按延迟；沿用用户已有的延迟设置。长按成立前不录音，提示进入录音状态后再说话。短按继续正常输入空格或选词。</p>
+<p><strong>“立即”指松手后立即结束录音并开始处理，不代表文字零延迟出现。</strong>识别耗时取决于设备、音频长度和模型是否已加载，本轮没有可承诺的秒数。</p>
+<ul>
+<li>在“空格长按行为”中增加“离线语音输入”，保留其他长按选项；录音或识别时在空格键区域显示状态。</li>
+<li>识别功能直接嵌入应用，首版只支持一个固定模型。无需安装 Marmalade，也不切换输入法。</li>
+<li>首版建议将模型随安装包提供，满足安装后断网使用；代价是模型原始文件约 239 MB，实际 APK 增量需打包测量。</li>
+<li>不实现实时转写、自动停句、多模型下载管理、语音命令、翻译、NPU 加速。松手本身就是结束信号，不必为停句另接 VAD 或 Smart Turn 模型。</li>
+</ul>
+</section>
+
+<section><h2>2. Marmalade 的可借鉴部分</h2>
+<p>已阅读参考仓库源码，调研快照为 <code>479badd7dcef1751f1a4e5840aeccd3a93abfb3a</code>。它是一套完整语音输入应用，包含语音输入法、系统识别服务、多模型安装、录音、端点检测、文本清理和独立界面。直接移植整套功能会扩大本次改动。</p>
+<div class="scroll"><table><thead><tr><th>部分</th><th>调研发现</th><th>本项目处理</th></tr></thead><tbody>
+<tr><td>本地引擎</td><td>主要通过 sherpa-onnx、ONNX Runtime 运行模型；另有直接使用 ONNX Runtime 的引擎。</td><td>借鉴统一封装；只接 OfflineRecognizer。</td></tr>
+<tr><td>录音</td><td>AudioRecord，VOICE_RECOGNITION 音源，16 kHz、单声道、PCM16；内存中处理音频。</td><td>借鉴采集与停止释放逻辑，首版无需保存音频文件。</td></tr>
+<tr><td>模型加载</td><td>录音可先于模型加载开始，以免冷启动漏掉开头。</td><td>录音与加载独立执行；不等待模型加载完成才收音。</td></tr>
+<tr><td>停止与清理</td><td>引擎、麦克风、会话有独立生命周期和互斥管理。</td><td>保留这些必要约束，去掉多引擎管理。</td></tr>
+<tr><td>中文模型</td><td>当前推荐 Qwen3-ASR，下载量约 987 MB；Whisper Large v3 Turbo 约 1 GB。</td><td>首版优先验证体积更小的 SenseVoice，不照搬其模型选择。</td></tr>
+</tbody></table></div>
+<p>参考项目代码为 MIT；引用代码时保留其声明。模型权重和推理依赖的许可分别核对，不能将应用的 MIT 许可直接套用到全部模型。</p>
+<p><a href="https://github.com/maxwhipw/marmalade-stt-android">参考项目说明</a> · <a href="https://github.com/maxwhipw/marmalade-stt-android/blob/479badd7dcef1751f1a4e5840aeccd3a93abfb3a/app/src/main/java/app/marmalade/stt/speech/AndroidMicCapture.kt">录音实现</a> · <a href="https://github.com/maxwhipw/marmalade-stt-android/blob/479badd7dcef1751f1a4e5840aeccd3a93abfb3a/app/src/main/java/app/marmalade/stt/speech/SherpaSttEngine.kt">引擎封装</a></p>
+</section>
+
+<section><h2>3. 模型选择：默认先验证 SenseVoice</h2>
+<div class="scroll"><table><thead><tr><th>候选</th><th>体积与适用性</th><th>本次判断</th></tr></thead><tbody>
+<tr><td><strong>SenseVoice Small INT8</strong></td><td>model.int8.onnx 为 239,233,841 字节，约 239 MB / 228 MiB；tokens.txt 约 316 kB。支持普通话、粤语、英语、日语、韩语；官方 sherpa 文档说明开启 ITN 支持标点。</td><td>推荐作为中文场景的首个验证对象；离线整段解码与“松手识别”匹配。不能将模型文件大小当成运行内存。</td></tr>
+<tr><td>Vosk small-cn-0.22</td><td>官方标注 42M 的轻量中文模型，提供 Android 接入方式。</td><td>如果安装包体积是首要约束，可改用它。准确率、标点及中英混说需按相同录音与 SenseVoice 对测，不能用不同测试集的数字直接比较。</td></tr>
+<tr><td>Qwen3-ASR / Whisper Large v3 Turbo</td><td>参考项目模型约 987 MB / 1 GB。</td><td>作为以后追求识别能力时的候选；本次不增加大模型管理和多引擎适配。</td></tr>
+</tbody></table></div>
+<p><strong>模型许可：</strong>SenseVoice 官方说明代码采用 MIT，权重采用模型卡所链接的 FunASR 模型许可；ONNX 转换仓库的 LICENSE 仅指向上游说明。因此模型入包前应固定权重来源、版本、哈希、许可文本及署名，不能标为“全部 Apache-2.0”。本调研不替代最终分发许可核对。</p>
+<p><a href="https://k2-fsa.github.io/sherpa/onnx/sense-voice/pretrained.html">SenseVoice 官方接入与语言说明</a> · <a href="https://huggingface.co/csukuangfj/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17/tree/main">转换后文件及大小</a> · <a href="https://github.com/QwenAudio/SenseVoice#license">权重许可说明</a> · <a href="https://alphacephei.com/vosk/models">Vosk 模型列表</a></p>
+</section>
+
+<section><h2>4. 当前项目已经具备的入口</h2>
+<div class="scroll"><table><thead><tr><th>本地代码</th><th>已验证行为</th><th>最小接入方式</th></tr></thead><tbody>
+<tr><td><code>input/keyboard/KeyDefPreset.kt</code></td><td>SpaceKey 已声明 SpaceLongPressAction。</td><td>复用定义，无需重做键盘布局。</td></tr>
+<tr><td><code>SpaceLongPressBehavior.kt</code>、<code>CommonKeyActionListener.kt</code></td><td>已有长按行为枚举和分发。</td><td>增加 VoiceInput 分支，启动语音会话。</td></tr>
+<tr><td><code>CustomGestureView.kt</code>、<code>BaseKeyboard.kt</code></td><td>长按后抑制普通点击；空格滑动已用于移动光标。</td><td>补充松手和取消回调；长按前仍可滑动移光标，录音成立后不再移动光标。</td></tr>
+<tr><td><code>FcitxInputMethodService.kt</code></td><td>已有 commitText、生命周期、协程与 Fcitx 作业队列。</td><td>持有控制器；结束输入时取消；验证会话后用现有提交接口上屏。</td></tr>
+<tr><td><code>CommonKeyActionListener.kt</code></td><td>CommitAction 会先 commitAndReset：中文选首候选，其他语言结束 composing，再 reset。</td><td>复用其语义，避免语音覆盖或混入尚未完成的拼音。</td></tr>
+<tr><td><code>input/bar/KawaiiBarComponent.kt</code></td><td>已有语音按钮只是切换到已启用的外部 voice subtype。</td><td>首版保持现有按钮；新功能由空格长按进入。</td></tr>
+</tbody></table></div>
+<div class="callout"><strong>必须补齐的细节：</strong>CustomGestureView 当前将 ACTION_CANCEL 也分发为 GestureType.Up；而 BaseKeyboard 的部分取消路径直接调用 cancelGestures()。不能简单在 Up 中“识别上屏”，否则取消也可能提交文字，或取消路径留下录音。</div>
+<p>建议添加一个专用的按压结束回调，明确携带 cancelled 标记，覆盖 ACTION_UP、ACTION_CANCEL 与程序取消；只让新语音逻辑消费这个回调，尽量保留已有手势 Up 的兼容行为。</p>
+</section>
+
+<section><h2>5. 依赖接入方式</h2>
+<p>使用 sherpa-onnx 官方的 Android 共享库与匹配的 Kotlin/JNI 封装，封成固定版本 AAR；应用侧新增 <code>speech/</code> 包即可。无需为语音输入修改 Fcitx C++、中文引擎或新增 Fcitx 插件。</p>
+<ul>
+<li>官方提供 AAR 构建示例；这里不假定存在可直接从 Maven Central 引入的官方完整 AAR。生成/引入产物必须记录源码版本与 SHA-256，并保留可重建步骤。</li>
+<li>若 AAR 已包含匹配的 ONNX Runtime 原生库，不要再额外引入另一版 onnxruntime-android，以免重复打包或加载版本不一致。</li>
+<li>Marmalade 当前封装标明对应 sherpa-onnx v1.13.8。版本仅作为调研参考；实施时选定并固定一个经过验证的版本，Kotlin/JNI 与所有 .so 必须来自同一版本。</li>
+<li>参考 v1.13.8 AAR 工程声明 minSdk 21，本项目为 23，从声明看无需跟随 Marmalade 升到 28；所选原生库仍须在支持的 Android 版本实测。</li>
+<li>项目支持四种 ABI，且使用 c++_shared。引入产物须检查 ABI 覆盖、libc++_shared 冲突、动态依赖、16 KB 页对齐和 Release 混淆保留；不能以随意 pickFirst 代替兼容性验证。</li>
+</ul>
+<p><a href="https://github.com/k2-fsa/sherpa-onnx/blob/master/android/SherpaOnnxAar/README.md">官方 AAR 构建方式</a> · <a href="https://k2-fsa.github.io/sherpa/onnx/android/build-sherpa-onnx.html">Android 共享库说明</a> · <a href="https://raw.githubusercontent.com/k2-fsa/sherpa-onnx/v1.13.8/android/SherpaOnnxAar/sherpa_onnx/build.gradle.kts">参考版本 minSdk 声明</a></p>
+</section>
+
+<section><h2>6. 首版交互与会话约束</h2>
+<ol>
+<li><strong>首次启用：</strong>从设置 Activity 请求 RECORD_AUDIO。当前 Manifest 没有此权限。设置完成后再按住说话；权限弹窗期间不尝试接续原先的按住手势。拒绝或永久拒绝时提示开启权限。</li>
+<li><strong>长按成立：</strong>检查权限、模型和输入目标；创建单次会话与目标代号。麦克风实际启动后显示“正在录音，松手识别”。录音缓冲与模型加载独立执行。</li>
+<li><strong>松手：</strong>立即请求停止采集，等待录音线程安全交出最后缓冲；显示“正在识别”，在专用后台线程执行一次离线解码。主线程和 Fcitx 队列不运行模型加载或推理。</li>
+<li><strong>上屏：</strong>确认输入会话、输入目标和可见状态仍有效，按已有 commitAndReset 语义处理预编辑，再回到主线程提交一次文本。“完成输入”只表示文字上屏，不自动发送消息或按回车。</li>
+<li><strong>取消：</strong>系统取消触摸、键盘隐藏、输入框切换、服务销毁均停止录音并废弃结果。JNI 推理可能无法被协程即时打断；结果作废后等待推理结束再释放原生资源，不能并发 release。</li>
+</ol>
+<p>建议首版每段最多 30 秒，达到上限自动结束并识别；识别期间不允许启动第二次录音。该上限是实现建议，尚未设备验证。16 kHz 单声道 Float32 的 30 秒缓冲约 1.92 MB，不含模型、推理中间张量和额外拷贝。</p>
+<p>为避免识别结果插入到后来移动的光标位置，录音和识别时暂停其他键盘输入动作；输入目标或选区变化时将会话作废，且区分程序自身的 composing/选区更新。密码输入框建议禁用该功能。</p>
+<p>模型首次后台加载，后续可短时缓存；键盘隐藏或收到内存压力时安排安全释放。首版无下载器，模型随包分发，音频只在内存停留；模型资产应排除不必要的备份副本。</p>
+<p>静音、极短输入或空结果不提交文字。音量阈值只能做轻量过滤，不能保证排除所有噪声误识别；若设备测试显示问题明显，再评估小型 VAD，而非默认引入额外模型。</p>
+</section>
+
+<section><h2>7. 预计改动面</h2>
+<div class="scroll"><table><thead><tr><th>类型</th><th>文件或位置</th><th>职责</th></tr></thead><tbody>
+<tr><td>新增约 3–4 个业务文件</td><td><code>speech/VoiceInputController.kt</code>、<code>PcmRecorder.kt</code>、<code>OfflineSpeechRecognizer.kt</code>，以及必要的独立状态视图</td><td>状态机与目标校验、录音、模型封装、状态提示；按职责拆分。</td></tr>
+<tr><td>修改手势链路</td><td><code>CustomGestureView.kt</code>、<code>BaseKeyboard.kt</code>、<code>KeyAction.kt</code>、<code>CommonKeyActionListener.kt</code></td><td>长按启动、松手结束、取消丢弃；锁定录音期间的冲突手势。</td></tr>
+<tr><td>修改配置与服务</td><td><code>SpaceLongPressBehavior.kt</code>、<code>AppPrefs.kt</code>、键盘设置 Fragment、<code>FcitxInputMethodService.kt</code></td><td>新行为选项、权限入口、控制器生命周期和安全提交。</td></tr>
+<tr><td>显示状态</td><td><code>InputView.kt</code> 或空格键显示更新入口</td><td>不切换键盘窗口，避免丢失正在按住的触摸流。</td></tr>
+<tr><td>依赖与资源</td><td><code>AndroidManifest.xml</code>、<code>app/build.gradle.kts</code>、必要的 Version Catalog、混淆规则、strings、模型资产及许可</td><td>麦克风权限、本地运行库、权重、提示文本和第三方声明。</td></tr>
+</tbody></table></div>
+<p>这是静态调研后的改动范围估计，不是“几行代码即可完成”的承诺。现有插件 IPC 主要提供剪贴板转换等接口，没有语音会话接口；另做插件需要协议、服务连接和跨进程管理，首版内嵌更直接。</p>
+</section>
+
+<section><h2>8. 实施顺序与验收</h2>
+<ol>
+<li><strong>先验证原生依赖与模型：</strong>固定 AAR 和模型，构建当前项目的 arm64 Debug/Release；用固定的中文、中英混说及静音音频测初始化、解码、内存、标点与输出。记录冷启动和热启动，不用桌面成绩推断手机表现。</li>
+<li><strong>再接手势与提交：</strong>实现权限入口、按住采集、松手识别、状态提示、取消和输入目标校验。保留普通空格、长按其他选项与滑动移光标。</li>
+<li><strong>最后做设备回归：</strong>真机录音、飞行模式、麦克风被占用/权限撤销、长按后滑出、系统取消、多指与 vivo 兼容分发路径、旋转、切换输入框、隐藏键盘、识别中继续操作、连续多次录音与内存回收。</li>
+</ol>
+<p>针对状态机与取消/过期结果补必要测试；触摸取消必须覆盖普通分发和程序 cancelGestures 路径。Release 要实际运行 JNI 识别，只有编译通过不足以证明混淆和动态库可用。</p>
+<div class="callout"><strong>本轮已验证：</strong>现有源码入口、手势取消差异、提交语义、参考项目的录音和推理架构、模型文件大小、官方 Android/AAR 方案。<br><strong>尚未验证：</strong>模型入包、完整许可归档、AAR 二进制兼容、APK 增量、手机准确率与耗时、内存峰值、各 Android 版本麦克风行为。本轮没有下载大模型、编译应用或运行录音。</div>
+</section>
+<footer>本地代码基线：eb5b50216e70484a009933d9519db76005f1faf3。本文为实现前调研，不代表功能已开发或已通过性能验收。</footer>
+</main></body></html>

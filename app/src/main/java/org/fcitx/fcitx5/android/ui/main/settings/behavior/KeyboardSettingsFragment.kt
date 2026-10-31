@@ -7,4 +7,14 @@ package org.fcitx.fcitx5.android.ui.main.settings.behavior
 import org.fcitx.fcitx5.android.data.prefs.AppPrefs
 import org.fcitx.fcitx5.android.data.prefs.ManagedPreferenceFragment
 
-class KeyboardSettingsFragment : ManagedPreferenceFragment(AppPrefs.getInstance().keyboard)
+class KeyboardSettingsFragment : ManagedPreferenceFragment(AppPrefs.getInstance().keyboard) {
+    override fun onPreferenceUiCreated(screen: androidx.preference.PreferenceScreen) {
+        screen.addPreference(androidx.preference.Preference(requireContext()).apply {
+            setTitle(org.fcitx.fcitx5.android.R.string.voice_setup)
+            setOnPreferenceClickListener {
+                startActivity(android.content.Intent(requireContext(), org.fcitx.fcitx5.android.input.voice.VoiceSetupActivity::class.java))
+                true
+            }
+        })
+    }
+}

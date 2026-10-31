@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Qwen3-ASR 端内语音输入 · 实现规格</title>
+<style>
+:root{color-scheme:light;--bg:#f2f5f7;--ink:#172b39;--muted:#526777;--line:#dce4eb;--accent:#146b65;--soft:#e9f5f1;--warn:#fff3d9}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.85 system-ui,-apple-system,"Noto Sans CJK SC",sans-serif}
+main{max-width:1140px;margin:auto;padding:44px 28px 80px}header{padding:26px 0;border-top:6px solid var(--accent)}h1{font-size:36px;line-height:1.35;margin:16px 0}h2{font-size:24px;line-height:1.5;margin:0 0 18px}h3{font-size:18px;margin:24px 0 8px}p{margin:10px 0}
+section{background:white;border:1px solid var(--line);border-radius:16px;padding:28px;margin:22px 0;scroll-margin-top:20px}.lead{font-size:20px;max-width:940px}.meta,small,footer{color:var(--muted)}.badge{display:inline-block;border-radius:30px;padding:3px 12px;background:var(--soft);color:var(--accent);font-size:13px;font-weight:650}
+.callout{border-left:4px solid var(--accent);background:var(--soft);padding:14px 18px;margin:18px 0}.warn{background:var(--warn);border-color:#b48114}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.card{padding:18px;border:1px solid var(--line);border-radius:12px}.card strong{display:block;color:var(--accent);font-size:19px}
+nav{display:flex;flex-wrap:wrap;gap:8px 18px;padding:15px 0}a{color:#086e92;text-underline-offset:3px;overflow-wrap:anywhere}code{font:0.88em/1.6 ui-monospace,monospace;background:#edf2f5;padding:2px 5px;border-radius:4px;overflow-wrap:anywhere}pre{background:#142c3b;color:#e7f1f6;padding:18px;border-radius:10px;overflow:auto;font-size:13px;line-height:1.7}pre code{background:none;padding:0;color:inherit}
+.scroll{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:14px}th,td{padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:top;text-align:left}th{background:#f0f5f7}li{margin:7px 0}.flow{display:flex;align-items:center;flex-wrap:wrap;gap:8px}.flow span{background:#edf5f3;padding:10px 14px;border-radius:9px}.flow b{color:var(--muted)}.mock{background:#edf1f5;border:1px solid #cbd5df;border-radius:12px;padding:20px;max-width:650px;margin:16px auto}.editor{background:white;border:1px solid #cbd5df;border-radius:8px;padding:18px;min-height:90px}.composing{text-decoration:underline;text-decoration-style:dotted;text-underline-offset:6px;background:#e3f4ee}.status{padding:12px;color:var(--accent);text-align:center}.space{width:65%;margin:5px auto 0;text-align:center;background:white;border:1px solid #bdcbd6;border-radius:9px;padding:10px}
+.keyboard-mock{margin-top:18px;border-top:2px solid #bdcbd6;padding-top:12px}.keyboard-mock .status{margin:8px 0;background:#e3f4ee;border-radius:7px;font-size:14px}.cancel-hint{display:inline-block;margin-left:16px;color:#526777}.key-row{display:flex;gap:5px;justify-content:center;margin:6px 0}.key-row>span{flex:1;min-width:0;text-align:center;border:1px solid #cbd5df;border-radius:5px;background:#fff;padding:7px 0;font-size:12px;color:#697b88}.bottom-row .space{flex:5;width:auto;margin:0;background:#d1eae3;color:#146b65;border-color:#146b65;font-weight:650}
+@media(max-width:720px){main{padding:24px 14px 50px}section{padding:21px 16px}h1{font-size:29px}.grid{grid-template-columns:1fr}th,td{min-width:150px}.lead{font-size:18px}}
+@media print{body{background:white}main{max-width:none;padding:0}section{border-radius:0;break-inside:auto}h2,h3{break-after:avoid}tr,.card,.callout{break-inside:avoid}nav{display:none}a{color:inherit}}
+</style>
+</head>
+<body><main>
+<header>
+<span class="badge">SPEC v1.4 · 首版采用 6＋1 秒窗口 · 质量优先</span>
+<h1>长按空格说话，文字随说随显</h1>
+<p class="lead">Qwen3-ASR 在应用内离线运行。长按成立后采音，识别中用 Android composing 文本持续覆盖同一段预编辑内容；抬手停止采音，最后一次识别完成后定稿。</p>
+<p class="meta">2026-10-31 · fcitx5-android · 代码基线 <code>74c5c8475842</code> · 已完成独立 P0 与正式输入法接入；首版取舍、制品和真机联调见 <a href="qwen3-asr-v1-report.html">V1 交付报告</a>。</p>
+<nav aria-label="文档目录"><a href="#decision">方案结论</a><a href="#research">模型与运行时</a><a href="#experience">交互</a><a href="#state">状态与生命周期</a><a href="#composition">预编辑协议</a><a href="#recognition">识别调度</a><a href="#delivery">模型交付</a><a href="#changes">代码改动</a><a href="#acceptance">验收</a><a href="#review">Review 要点</a><a href="#sources">来源</a></nav>
+</header>
+
+<section id="decision"><h2>1. 方案结论与边界</h2>
+<div class="grid"><div class="card"><strong>固定 Qwen3-ASR-0.6B INT8</strong>优先验证 sherpa-onnx 的 ONNX 导出权重；1.7B 不进入首版。</div><div class="card"><strong>全程同一段 composing</strong>partial 可以修改前文；录音中不逐句 commit，不把中间结果追加成多份。</div><div class="card"><strong>首版优先文字保真</strong>选择已测的 6＋1 秒窗口；延迟和内存仍有明确代价，不宣称全部门槛已通过。</div></div>
+<div class="callout warn"><strong>首版选型：6 秒新音频＋1 秒左重叠，CPU 2 线程，默认内存策略。</strong>60 秒中文 P0 的 CER 约 14.15%，优于 2＋1 秒的 25.23%；刷新间隔 P95 约 2.39 秒、定稿等待约 3.40 秒、峰值 PSS 约 2343 MiB。按最新要求交付体验相对最好的一组，不设总录音时长上限；原性能与质量目标仍作为后续优化指标。参见 <a href="qwen3-asr-v1-report.html">V1 实现与真机联调</a>、<a href="qwen3-asr-window-p0-report.html">窗口 P0 报告</a>。</div>
+<p>本次需求替代旧调研中的 SenseVoice、松手后才开始识别方案。旧文件 <a href="offline-voice-input-research.html">offline-voice-input-research.html</a>保留作历史材料；本功能以后以本文为准。</p>
+<ul>
+<li><strong>必须：</strong>长按空格触发、按住时在宿主输入框出现可修改的预编辑文字、松手停止、全部识别在本地完成。</li>
+<li><strong>总录音时长：</strong>按最新要求不设置产品上限，正常由抬手结束；单次模型输入与音频缓存分别有界。12 / 60 / 90 / 180 秒等是有限实验档位，不是产品时长限制；没有证据的 15 秒上限已撤销。</li>
+<li><strong>暂不包含：</strong>云端回退、系统 SpeechRecognizer、强制对齐、翻译、语音命令、NPU/GPU 适配与多模型管理。</li>
+<li><strong>术语：</strong>用户所说的 pre-compose 对应 Android <code>setComposingText()</code> / 本项目的 client preedit；下划线等视觉样式由宿主编辑器决定，不能保证每个应用都显示同一种下划线。</li>
+</ul>
+</section>
+
+<section id="research"><h2>2. 调研与实测依据：端内已运行，窗口方案仍需优化</h2>
+<div class="scroll"><table><thead><tr><th>路线</th><th>当前证据</th><th>本项目判断</th></tr></thead><tbody>
+<tr><td>Qwen 官方 Python / vLLM</td><td>官方发布 0.6B、1.7B，并提供离线和流式推理；官方工具目前将流式接口放在 vLLM 后端。<a href="https://github.com/QwenLM/Qwen3-ASR#streaming-inference">[S1]</a></td><td>用于理解模型能力和建立离线质量参考，不作为 Android 运行时。不能把服务端延迟数字当成手机表现。</td></tr>
+<tr><td>sherpa-onnx + ONNX Runtime</td><td>维护方已提供 Qwen3-ASR ONNX 转换、Kotlin/Java 接口和 Android 平台支持。Qwen 接在 <code>OfflineRecognizer</code>。<a href="https://k2-fsa.github.io/sherpa/onnx/qwen3-asr/index.html">[S2]</a> <a href="https://github.com/k2-fsa/sherpa-onnx/blob/v2.0.1/sherpa-onnx/kotlin-api/OfflineRecognizer.kt">[S4]</a></td><td>首选。可复用现成 JNI 封装，但仍需核对选定 AAR 与模型的真实兼容性。</td></tr>
+<tr><td>sherpa 的 simulated streaming</td><td>维护方示例周期性创建离线 stream，重识别累积音频并更新显示；不是编码器跨音频块的缓存式流式接口。<a href="https://github.com/k2-fsa/sherpa-onnx/blob/935e5ded3d949a8b557ac44ef4dad03a7d2038e7/sherpa-onnx/csrc/sherpa-onnx-vad-microphone-simulated-streaming-asr.cc">[S5]</a></td><td>据此设计有界重复解码；示例的更新节奏不构成手机速度承诺。Android 示例通用页面本次未检索到 Qwen APK 条目，不把预编译演示 APK 作为验证结论。</td></tr>
+<tr><td>自行实现 ONNX / GGML / llama.cpp 后端</td><td>本文未完成这些替代后端的 Android 流式接口、量化兼容性和性能核验。</td><td>不作为已证实可替代方案。如果首选失败，再定向评估；不得直接假定“支持 Qwen3 文本模型”就等于支持 Qwen3-ASR。</td></tr>
+</tbody></table></div>
+<h3>固定候选模型</h3>
+<p><code>sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25</code>。维护方列出的文件约为：frontend 42 M、encoder 174 M、decoder 721 M，另含约 4 M tokenizer。P0 已核对实际模型与 tokenizer 共 987,015,347 字节（约 941 MiB）；文档中的 M 是近似显示，不能等同于十进制 MB。<a href="https://k2-fsa.github.io/sherpa/onnx/qwen3-asr/pretrained.html#download">[S3]</a></p>
+<p>P0 已使用已发布的 <a href="https://github.com/k2-fsa/sherpa-onnx/releases/tag/v2.0.1">sherpa-onnx v2.0.1</a>，不跟随 master 自动升级。另阅读维护方源码快照 <code>935e5ded3d949a8b557ac44ef4dad03a7d2038e7</code>以理解调度；快照中的修复不能自动视为发行版已有能力。P0 必须保存最终使用的 AAR、源码 revision 和 SHA-256。</p>
+<p>模型与 Qwen 官方代码采用 Apache-2.0；发布时保留权重来源、转换来源与相应许可。sherpa-onnx、ONNX Runtime、分词器等依赖分别保存第三方声明。<a href="https://github.com/QwenLM/Qwen3-ASR/blob/main/LICENSE">[S9]</a></p>
+<div class="callout warn"><strong>实测边界：</strong>P0 已测选定手机的长句刷新、RSS/PSS、进程首次加载和测试宿主 composing；当前整段路线未通过。人工口述、完整 CER/WER、其他宿主与设备、Release/R8 和 16 KB 运行仍未验证。官方“模型支持 streaming”不代表当前 Android Kotlin API 有同等的原生流式能力。</div>
+</section>
+
+<section id="experience"><h2>3. 用户交互合同</h2>
+<div class="flow" aria-label="正常交互流程"><span>按下空格</span><b>→</b><span>长按成立 / 开始收音</span><b>→</b><span>按住 / composing 刷新</span><b>→</b><span>抬手 / 停止收音</span><b>→</b><span>最后校正 / 定稿</span></div>
+<p><strong>布局：保留整个键盘区与原有高度。</strong>录音状态显示在键盘顶部原候选栏 / 工具栏区域，空格键只更新文案与按下态；字母键继续可见，录音中暂停其他软键的字符输入。状态更新不替换键盘视图、不销毁当前空格键，确保原始手指抬起事件仍可到达。</p>
+<div class="mock" aria-label="保留键盘区的预编辑效果示意，不代表已经实现"><small>宿主应用输入框 · composing 出现在这里</small><div class="editor">明天的安排：<span class="composing">下午三点在会议室见</span>│</div><div class="keyboard-mock"><small>输入法区域 · 原有布局与高度保留</small><div class="status">● 正在听 · 松手结束 <span class="cancel-hint">取消</span></div><div class="key-row" aria-hidden="true"><span>Q</span><span>W</span><span>E</span><span>R</span><span>T</span><span>Y</span><span>U</span><span>I</span><span>O</span><span>P</span></div><div class="key-row" aria-hidden="true"><span>A</span><span>S</span><span>D</span><span>F</span><span>G</span><span>H</span><span>J</span><span>K</span><span>L</span></div><div class="key-row" aria-hidden="true"><span>⇧</span><span>Z</span><span>X</span><span>C</span><span>V</span><span>B</span><span>N</span><span>M</span><span>⌫</span></div><div class="key-row bottom-row" aria-hidden="true"><span>符</span><span>，</span><span class="space">按住说话</span><span>。</span><span>↵</span></div></div></div>
+<div class="scroll"><table><thead><tr><th>场景</th><th>规定行为</th></tr></thead><tbody>
+<tr><td>开启功能</td><td>在现有“空格长按行为”中增加“离线语音输入”。首次启用在设置页处理录音权限及资源准备。新装和已有用户均不静默修改原长按偏好；用户启用后此行为取代其他空格长按动作。</td></tr>
+<tr><td>短按</td><td>继续当前空格 / 选词行为。沿用用户长按延迟（当前默认 300 ms，可设 100–700 ms），阈值前不打开麦克风。</td></tr>
+<tr><td>长按成立</td><td>消费该次手势，避免抬手额外输入空格。检查权限、可用编辑器和会话状态；成功开始采音后提供一次短振动反馈，再显示“正在听 · 松手结束”。仅每个会话成功开始时触发一次；权限不足、资源检查失败或采音启动失败时不触发开始振动。</td></tr>
+<tr><td>振动去重</td><td>语音长按关闭手势层原有的阈值振动，改由采音启动成功回调触发；避免“长按阈值一次 + 开始录音一次”双振动。按下时的普通按键触感沿用原偏好；录音期间不循环振动，松手不额外触发该手势的长按抬手振动。开始反馈沿用现有长按强度 / 时长配置并尊重触觉反馈开关。</td></tr>
+<tr><td>冷加载</td><td>长按后先收音，模型异步加载，显示“正在听 · 模型加载中”；不能丢开头。首版设置页只准备磁盘模型，不主动加载推理；热实例可在同一输入框内复用。冷加载失败立即停采音并提示。</td></tr>
+<tr><td>说话过程中</td><td>partial 全量替换本次 composing。允许标点和前文修订；不在候选栏显示后就宣称已满足“上屏”。键盘内状态条可显示加载、音量和时长，不夺取输入焦点。</td></tr>
+<tr><td>正常抬手</td><td>立即发出停止采集请求，不再接受抬手后的采样；保留已接受的尾部音频。显示“正在整理…”，完成最终识别后一次定稿；不自动发送消息、回车或添加空格。</td></tr>
+<tr><td>滑动和多指</td><td>长按前横滑仍移动光标，并阻止长按启动；长按后不再移动光标，轻微滑出键帽仍录音，原始指针抬起才结束。其他手指抬起不能结束录音；录音中其他软键不输入字符。系统 CANCEL 走取消，不当成松手成功。</td></tr>
+<tr><td>再次长按 / 正在整理</td><td>本次 final 尚未结束时不创建第二会话。显示当前整理状态；须先完成或取消，避免两个 composing 互相覆盖。</td></tr>
+<tr><td>时长与超时</td><td>不设总录音时长上限，也不因静音自动结束；正常抬手停止。权限撤销、目标失效或资源过载走明确错误 / 取消路径，不静默丢弃音频。加载 / final 超时单独管理，与总录音时长无关。</td></tr>
+<tr><td>不可用的输入目标</td><td>密码、数字密码、网页密码、TYPE_NULL、无 InputConnection、未知光标位置或非空选区：不开始，提示原因。首版不替换选中文字，避免取消时无法可靠恢复。</td></tr>
+<tr><td>取消</td><td>返回键 / 显式取消、系统 CANCEL、隐藏键盘、切换输入框或输入法时停止采音并使会话失效。仅在原输入目标和 composing 范围仍可验证时清除本次草稿；否则不做文本删除。</td></tr>
+</tbody></table></div>
+<p><strong>“抬手后结束”的含义：</strong>抬手即结束录音，最终文字可能稍后校正。若要求抬手瞬间就冻结最后一个 partial、永不校正，会牺牲尾字完整性；本文采用停止收音后完成 final 的语义。</p>
+</section>
+
+<section id="state"><h2>4. 会话状态、输入目标和生命周期</h2>
+<pre><code>Idle ──长按成立──→ Starting ──采音已启动──→ Listening
+                           （模型可同时处于 Loading）
+Listening ──正常抬手──→ Finalizing ──final 定稿──→ Idle
+Starting / Listening / Finalizing ──取消 / 目标失效──→ Cancelling ──清理──→ Idle
+任一活动状态 ──可恢复错误──→ 清理 + 错误提示 ──→ Idle
+模型状态独立：Absent / Loading / Ready / Failed / Releasing</code></pre>
+<ul>
+<li>首版使用单调 <code>generation</code> 同时作为会话和目标失效令牌：每次开始、<code>onStartInput()</code>（含 restarting）、解绑、结束或视图重建时递增。绑定 <code>InputConnection</code> 实例，检查输入视图可见性和初始折叠选区；结果只在代次与连接均一致时写入。</li>
+<li>每个识别请求携带 <code>(sessionId, editorEpoch, revision, audioEndSample, kind)</code>。所有 UI 写入前在主线程校验活动会话、编辑器代次、连接、可见性与 composing 所有者；过期 partial / final 一律丢弃。</li>
+<li><code>onStartInput</code>、<code>onFinishInputView</code>、<code>onFinishInput</code>、<code>onUnbindInput</code>、<code>onDestroy</code>、主题重建和触摸目标销毁均必须进入取消 / 失效逻辑。先失效再执行原有 finish/reset，避免迟到结果写入新目标。</li>
+<li>收到非预测的光标、选区或 composing 变化时取消会话；普通文本输入、粘贴及其他修改内容的入口不能与语音会话并发。服务内部已预测的选区回调不得误判为用户移动光标。</li>
+<li>取消是幂等操作；正常抬手、CANCEL、视图销毁可能相继到达，但停录、清空草稿和 final 定稿各最多执行一次。</li>
+</ul>
+<p>所有 InputConnection、选区预测和 Fcitx composing 状态变更都在主线程完成。AudioRecord 读取与模型解码分别使用后台执行器；native 解码的对象在调用返回前不能释放。</p>
+</section>
+
+<section id="composition"><h2>5. composing 所有权与 Fcitx 协调</h2>
+<p>现有 <code>FcitxInputMethodService.updateComposingText()</code> 为私有方法，同时维护 <code>composing</code>、<code>composingText</code> 和 <code>selection.predict()</code>。ClientPreeditEvent 会调用它；光标回调会反向驱动 Fcitx 光标。语音若直接调用 IC 而不更新这些状态，会产生覆盖、重复提交或错误 reset。</p>
+<h3>5.1 获取编辑权</h3>
+<ol>
+<li>先完成输入目标检查。首版有既存 Fcitx preedit 时，将当前可见 preedit 原样定稿，再清空 Fcitx 内部预编辑；不隐式选择其他候选，不把旧拼音当作语音文字删除。首版按此行为实现。</li>
+<li>在现有 Fcitx 串行任务队列内执行清空 / 同步屏障，等待相关事件被主线程消费，再设置 <code>CompositionOwner.Voice(sessionId)</code>。采音不等待此屏障，第一条 partial 必须等待。</li>
+<li>屏障必须覆盖引擎任务和 Android eventFlow 消费两个方向；不能用固定延时替代。若现有事件无序号，需要增加可确认的队列标记 / drain 协议。</li>
+<li>Voice 持有期间冻结普通按键和会修改文本的 Fcitx 事件入口（ClientPreedit、CommitString、DeleteSurrounding、回送 KeyEvent），并隔离输入面板旧候选。不能只屏蔽 ClientPreedit。恢复前丢弃该阶段旧事件、清空引擎并再次同步。</li>
+</ol>
+<h3>5.2 partial / final / cancel 的精确语义</h3>
+<div class="scroll"><table><thead><tr><th>操作</th><th>Android 与内部状态</th><th>不变量</th></tr></thead><tbody>
+<tr><td>partial</td><td>由 service 暴露受会话校验的 <code>updateVoiceComposition()</code>，内部复用 / 抽取现有 composing helper。<code>setComposingText(fullText, 1)</code> 更新整段，保存 composing 范围并预测光标；相同文本不重复调用。</td><td>只存在一段语音草稿，光标在末尾；revision 单调增加，文本长度可以缩短。空 partial 首次不创建 span；已有草稿被识别为空时应清掉该草稿。</td></tr>
+<tr><td>final</td><td>停止采音并固定最后样本序号，完成覆盖全段的最终识别。若与草稿相同，finish；若不同，以最终全文替换该 composing 再 finish。复用 service 的记账协议，commit 与 finish 不重复插入。</td><td>最终效果只有一份全文；final revision 屏蔽所有迟到 partial。空 final 要移除仍归本会话的草稿，不能保留幻觉文字。</td></tr>
+<tr><td>显式取消，原目标有效</td><td>只有能验证原连接、选区与本次 composing 范围时，<code>setComposingText("", 1)</code> 后 finish，清空内部状态。不得通过删除字符数量来猜测回滚范围。</td><td>保留录音前已有文本与已定稿的 Fcitx preedit。</td></tr>
+<tr><td>目标失效 / 宿主外部修改</td><td>先撤销写入许可，停止采音；不对新连接或无法验证的旧范围作清空、移动选区或补提交。原宿主可能保留 / 自行定稿已显示草稿，这是 Android 失去连接后的限制。</td><td>不把旧语音写入新输入框，不误删用户新内容。</td></tr>
+<tr><td>IC 失败或不支持 composing</td><td>检查调用结果与后续回调，取消后续写入并提示“此输入框暂不支持语音预编辑”。真机兼容测试决定支持名单；IC 返回 true 不证明宿主一定按预期保留 span。</td><td>不采用每次 commit partial 的补救方式。无法撤销的宿主行为不能靠重复写入修复。</td></tr>
+</tbody></table></div>
+<p>上述对应 Android <a href="https://developer.android.com/reference/android/view/inputmethod/InputConnection#setComposingText(java.lang.CharSequence,int)">setComposingText</a>、<a href="https://developer.android.com/reference/android/view/inputmethod/InputConnection#commitText(java.lang.CharSequence,int)">commitText</a> 与 <a href="https://developer.android.com/reference/android/view/inputmethod/InputConnection#finishComposingText()">finishComposingText</a> 的替换 / 定稿语义。宿主可限制或重写输入，不能承诺跨所有应用的事务式回滚。[S6]</p>
+</section>
+
+<section id="recognition"><h2>6. 有界分段、重叠拼接与背压</h2>
+<h3>6.1 数据路径与资源边界</h3>
+<pre><code>长按开始 / 原始指针 Up 或 Cancel
+  → VoiceInputController（会话与目标令牌）
+  → AudioRecord：PCM16 / 单声道 / 16 kHz
+  → 固定容量 Float32 环形缓冲（采样位置使用 Long）
+  → 单一 ASR worker：C 秒新音频 + O 秒左侧重叠
+  → Qwen3-ASR / sherpa OfflineRecognizer
+  → 文字重叠对齐：已处理段 + 当前假设
+  → 主线程校验 → 全量更新同一段 composing</code></pre>
+<p>采音不得等待解码，不保留随总录音时长增长的完整 PCM。ring 为 3C+O+1 秒。首版 C=6、O=1，即固定 20 秒、约 1.22 MiB；单次模型快照最多 7 秒、约 0.43 MiB。识别正文会随录音增长，这是输出内容，不是无限音频缓存。</p>
+<p>优先 VOICE_RECOGNITION 音源，按 getMinBufferSize 配缓冲。不能原生采到 16 kHz 时使用有状态重采样器，不能伪标采样率。正常抬手划定最后接受样本并停止后续采集；尾部硬件缓冲如何保留仍需生产路径真机逐字验证。</p>
+<h3>6.2 调度和最终结果</h3>
+<ol>
+<li>连续音频按顺序形成长度有界的段，前 O 秒作为左侧上下文。首版固定 C=6 秒、O=1 秒；不把窗口长度当作录音时长上限。</li>
+<li>每段内可增量重识别当前短窗。只保留最新待运行 partial，已开始的 native decode 不并发销毁。闭合段必须按序处理，不能为了追赶时间跳过未识别音频。</li>
+<li>已处理段只是内部识别状态，不能逐段 commit；全部文字保持在同一 composing 中，重叠区域允许回改，最终抬手后统一定稿。</li>
+<li>临近段末可估算 partial 耗时并减少冗余解码；该策略可能拉长更新间隔，必须以实测选择，不能直接视为性能优化。</li>
+<li>抬手后处理剩余段和最后短窗。输入范围与配置完全相同时可复用已完成结果；恰在段边界结束时不重新解码一份仅含重叠的尾窗。</li>
+<li>若 worker 落后到 ring 将覆盖未处理内容，进入明确失败 / 取消路径，不静默丢音，不通过扩展为无界全录音缓存掩盖积压。P0 中的低内存配置已出现这一问题，不能据此设置人为总时长限制。</li>
+</ol>
+<h3>6.3 文字拼接的验收要求</h3>
+<p>P0 原型使用归一化 token 的后缀 / 前缀精确匹配与有限编辑距离；多解记录 ambiguous，未匹配记录 unmatched。该启发式没有可靠音频时间戳，快速语音和重复词句会产生重复、漏字或错误回改，尚未满足生产质量门槛。</p>
+<p>所有窗口都被解码，不等于正文没有漏字。除延迟和内存，必须对照同一音频参考转写统计 CER/WER、插入、删除、替换及边界错误；对比必须注明模型配置与参考来源。更大重叠也可能更慢或更不准确，不能仅按速度选参数。</p>
+<h3>6.4 模型、超时和失败</h3>
+<ul>
+<li>模型固定 Qwen3-ASR-0.6B INT8，frontend / encoder / decoder / tokenizer 一并锁定。默认 CPU，P0 使用 2 线程并额外试验 4 线程低内存组合，不假定 GPU/NPU 加速可用。</li>
+<li>当前导出图上下文上限 512；单次短窗遵守导出上限，输出 token 预算初始 256。总时长通过顺序短窗处理，不把整段音频装进同一个上下文，也不能靠调大 Kotlin 数值突破导出图上限。</li>
+<li>明显静音 / 噪声不应定稿为幻觉文字，语音存在性过滤需用实际采音幅度校准。P0 的静音及固定噪声重复检查不替代真实环境验收；不因静音自动结束总会话。</li>
+<li>模型加载超时建议 10 秒，抬手后最终校正超时建议 5 秒；只影响该步骤，不限制总录音时长。当前目标有效且已有草稿时，保留并定稿草稿并提示未完成最终校正；目标失效禁止补写，显式取消按第 5 节清理。</li>
+<li>Kotlin Job.cancel 不保证中断 JNI。取消先撤销写入许可，native 调用返回后再释放 stream / recognizer；不通过创建无限新 worker 重试。</li>
+<li>模型加载 / 推理峰值仍需单独优化。独立私有进程可隔离崩溃与回收，但不会自动降低推理本身峰值；如采用该方案须重新测 P0。</li>
+</ul>
+<p>本节取代整段前缀反复解码的原设计。实测数字、原始事件哈希和复现工具见 <a href="qwen3-asr-window-p0-report.html">有界窗口 P0 报告</a>。</p>
+</section>
+
+<section id="delivery"><h2>7. 权限、模型交付与资源生命周期</h2>
+<h3>权限与隐私</h3>
+<p>Manifest 增加 <code>RECORD_AUDIO</code>，麦克风 feature 设为非必需；在设置 Activity 申请运行时权限。IME 内权限不足只显示“请先在设置中授权麦克风”的可操作入口，不在长按期间自动弹 Activity 试图继续同一手势。授权后必须重新长按才开始。权限永久拒绝、一次性权限失效、系统麦克风开关关闭均有独立提示。</p>
+<p>仅输入视图可见且活动会话存在时采音，不录制后台音频；不落盘录音，不记录识别正文，不上传音频。Android 会对并发采音、前后台状态施加限制，应检测被系统静音和录音配置变化，不把全零音频当成用户未说话。<a href="https://developer.android.com/media/platform/sharing-audio-input">[S7]</a> 首版不新增常驻麦克风前台服务；可见 IME 的采音权限行为需在目标系统实测。</p>
+<h3>本文的交付默认：权重随语音版安装包提供</h3>
+<p>将“嵌入应用内运行”落实为运行时与权重均随包提供，安装并完成本地资源准备后可断网使用。此选择会产生接近 1 GB 量级模型负担；它是待 review 的交付建议，不是用户已确认的包体要求。</p>
+<ul>
+<li>固定资源清单：<code>conv_frontend.onnx</code>、<code>encoder.int8.onnx</code>、<code>decoder.int8.onnx</code>、<code>tokenizer/{merges.txt,vocab.json,tokenizer_config.json}</code>，以及版本清单与许可证。若实际导出需要 external-data 伴随文件，必须一起封装，不能只复制 .onnx。</li>
+<li>大权重不进 Git。构建从固定制品地址获取并校验精确字节数 / SHA-256；不允许 latest 或无法验证的临时链接。生成模型清单、运行时版本、来源 revision 与第三方声明。</li>
+<li>权重 assets 设置 noCompress；基线优先验证首次启用时后台复制至 <code>noBackupFilesDir/asr/&lt;model-id&gt;/</code>，确保 ONNX / tokenizer 能使用真实文件路径。先写临时目录、完整校验，再原子启用，失败不留下“就绪”状态。</li>
+<li>这一基线存在 APK 内权重与解包文件的双份存储，另有安装及临时目录开销。设置页显示真实所需空间并预检；不能把“模型约 940 MB”当作总磁盘需求。若后续证明所有文件可直接从 assets 读取，再移除复制阶段。</li>
+<li>先提供 arm64-v8a 语音能力；项目现有其他 ABI 的普通输入法继续保留，不默默降到不兼容 native 库。具体通过构建变体或发布制品隔离，P0 决定最小可维护方案，首版通过显式构建参数隔离：普通构建默认不携带权重，只有 <code>-PbuildABI=arm64-v8a -PbundleVoiceModel=true</code> 构建语音版。</li>
+<li>若包体 / 分发渠道不接受随包，备选是首次启用下载固定模型到私有目录，此后离线运行。它仍是端内推理，但首次断网不可用；需要明确更改交付要求，不在实现中擅自切换。</li>
+</ul>
+<h3>加载与释放</h3>
+<p>服务内只保留一个 recognizer，串行加载 / 解码 / 释放。首版不主动预热，成功会话后同一输入框内保留热实例；默认空闲 60 秒后释放，<code>onTrimMemory</code> 时尽快释放空闲实例，服务销毁后清理。活动 native 调用结束前仅标记待释放；不要因频繁打开键盘重复加载。</p>
+<p>核验 AAR 的 minSdk、C++ runtime、JNI 库名与现有 Fcitx 打包是否冲突；项目目前 minSdk 23、targetSdk 36、NDK 默认 28。检查所有新增 .so 的 16 KB ELF / APK 对齐，并在 16 KB 环境运行；“本项目使用新 NDK”不能证明第三方预编译 AAR 已兼容。<a href="https://developer.android.com/guide/practices/page-sizes">[S8]</a></p>
+</section>
+
+<section id="changes"><h2>8. 代码落点与最小组件边界</h2>
+<p>下面路径均相对仓库根目录。保留现有 Android View 键盘和 Fcitx 引擎，不为语音功能迁移 UI 框架。</p>
+<div class="scroll"><table><thead><tr><th>现有文件 / 新组件</th><th>改动职责</th></tr></thead><tbody>
+<tr><td><code>input/keyboard/SpaceLongPressBehavior.kt</code><br><code>CommonKeyActionListener.kt</code><br><code>KeyAction.kt</code></td><td>增加语音长按行为与 start / release / cancel 动作，向控制器分发；不把录音和模型逻辑塞入按键 listener。</td></tr>
+<tr><td><code>input/keyboard/CustomGestureView.kt</code></td><td>区分 Up / Cancel；<code>cancelGestures()</code> 也能幂等通知活动持有者。语音模式抑制阈值振动与该手势的抬手振动，由采音成功回调给出一次开始振动；长按后仍保证原手势结束事件；必要时单独提供持续长按回调，避免录音滑动依赖已被屏蔽的 Move。</td></tr>
+<tr><td><code>input/keyboard/BaseKeyboard.kt</code></td><td>连接空格 release/cancel 与指针归属；兼容空格滑动和 vivoKeypressWorkaround 的手动触摸分发。<code>releaseAllTouchTargets()</code> 当前只调用 cancelGestures，必须一起补取消通知。</td></tr>
+<tr><td><code>input/keyboard/KeyDefPreset.kt</code><br><code>NumberKeyboard.kt</code> 等布局</td><td>主 SpaceKey 复用长按定义；逐一审计 MiniSpaceKey / 数字符号布局是否进入首版。默认主文本键盘入口，未覆盖入口不显示误导提示。</td></tr>
+<tr><td><code>input/FcitxInputMethodService.kt</code></td><td>会话代次、composition owner、Fcitx 事件屏障、受保护的 composing API、选区预测与生命周期取消。保留已有 commitText 的去重语义。</td></tr>
+<tr><td>新增 <code>input/voice/VoiceInputController.kt</code></td><td>会话状态机、目标令牌、取消、超时和结果版本过滤；只通过 service bridge 改宿主文本。</td></tr>
+<tr><td>新增 <code>AudioCapture.kt</code> / <code>Qwen3AsrEngine.kt</code></td><td>采音与样本边界；模型加载、快照解码、串行 native 生命周期。通过接口替换假实现以测试竞态。</td></tr>
+<tr><td>新增 <code>VoiceModelStore.kt</code> / <code>VoiceCompositionBridge.kt</code> / 状态 UI</td><td>本地模型校验准备；编辑器桥接与所有权；键盘内不抢焦点的状态及取消入口。</td></tr>
+<tr><td><code>data/prefs/AppPrefs.kt</code> / 键盘设置 / 字符串资源</td><td>沿用空格长按偏好，新增资源状态、权限准备入口与状态文案。模型线程数等工程参数首版不暴露成用户必须理解的设置。</td></tr>
+<tr><td><code>app/src/main/AndroidManifest.xml</code><br><code>app/build.gradle.kts</code> / 发布构建</td><td>录音权限、runtime 依赖、ABI、模型资源、打包排除、R8 keep 规则、许可证。验证缩减后的 Release，不只验证 Debug。</td></tr>
+</tbody></table></div>
+<p>现有 Kotlin 路径前缀为 <code>app/src/main/java/org/fcitx/fcitx5/android/</code>。当前代码事实：空格默认长按行为为 None，横滑光标默认开启；CustomGestureView 把 ACTION_CANCEL 作为 GestureType.Up 分发；service 的 onFinishInputView 会 finish composing。这三点均不能原样沿用于语音会话。</p>
+</section>
+
+<section id="plan"><h2>9. 实施顺序与可评审产物</h2>
+<ol>
+<li><strong>P0：两轮真实设备验证已完成。</strong>整段前缀方案与有界重叠窗口均有报告。Qwen3-ASR 能在端内运行，但原定延迟、内存与拼接质量门槛未全部通过。</li>
+<li><strong>V1：已按用户最新要求选择相对最佳配置实现。</strong>采用 6＋1 秒、CPU 2 线程、默认内存策略，接入正式输入法的手势、采音、模型准备、权限、composing 与生命周期保护；实际证据见 <a href="qwen3-asr-v1-report.html">首版交付报告</a>。</li>
+<li><strong>后续：Release 与宿主兼容验收。</strong>仍需验证 R8/JNI 制品、16 KB 页环境、低内存、麦克风争用、常见编辑器兼容和长时稳定性。继续优化准确率、延迟与内存。</li>
+</ol>
+<div class="callout">首版交付并不将原门槛改写为“已通过”。当前以较少边界错误换取更长的刷新与定稿等待，继续固定 Qwen3-ASR，不设产品总录音时长上限。有限实验时长不能证明无限时长稳定性。</div>
+</section>
+
+<section id="acceptance"><h2>10. 验收标准</h2><p class="callout warn">以下保留原建议目标。首版已按最新要求交付相对最佳配置，但原目标未全部通过；已覆盖检查与未验项目以 <a href="qwen3-asr-v1-report.html">V1 交付报告</a>为准。</p>
+<p><strong>以下全部是建议验收目标，不是已测成绩。</strong>首个参考设备暂以 arm64、8 GB RAM、中高端 CPU 手机为测试起点；报告必须记录实际机型、SoC、系统版本、热状态与线程数。不能仅凭总内存判定兼容。</p>
+<div class="scroll"><table><thead><tr><th>项目</th><th>通过标准 / 测量口径</th></tr></thead><tbody>
+<tr><td>布局与振动</td><td>原键盘高度与按键布局保留，状态栏不重建触摸目标；成功启动采音只产生一次开始振动，无手势层重复振动，失败不振动。覆盖冷加载、重复回调及触觉反馈开关。</td></tr>
+<tr><td>录音边界</td><td>长按阈值前不收音；抬手到停止采集目标 ≤150 ms；通过时间戳与已接受样本序号确认尾部不丢、抬手后语音不进入识别。开始失败不显示“正在听”。</td></tr>
+<tr><td>首条预编辑</td><td>模型已热且连续有声时，从有效语音起点到首个非空 composing 的 p95 ≤2 秒；至少 30 次。记录首条快照触发等待与实际推理耗时。</td></tr>
+<tr><td>持续刷新</td><td>3 / 8 / 15 秒普通话、英语和中英混合音频，在持续讲话且文本有变化的区间，相邻有效 composing 更新 p95 ≤1.5 秒；不能只在停顿或松手后更新。每档至少 10 次；再测可承受的 30 / 60 秒档，最终验收增加长时间连续录音，检查延迟、质量与内存走势，不把实验时长变成产品上限。</td></tr>
+<tr><td>最终等待</td><td>热模型下从抬手到定稿 p95 ≤2 秒，覆盖 15 秒录音；统计包含在途 partial 的等待。超 5 秒进入明确错误路径，不迟到写入。</td></tr>
+<tr><td>准确率</td><td>至少 100 条人工转写短句（3–15 秒），包括快语速、数字、专名、噪声和中英混合。报告普通话 CER、英语 WER；量化端内结果相较同音频官方 0.6B 离线参考的绝对错误率劣化目标 ≤2 个百分点。绝对质量另列，不以“对参考无劣化”掩盖难用。</td></tr>
+<tr><td>截断与静音</td><td>长录音首尾独特词、跨窗口词组与刻意重复词应保留；每个短窗无 token/context 截断，所有已接受音频按序覆盖。音频覆盖检查不能替代文字漏字 / 重复检查。至少 20 条静音 / 环境噪声片段无虚构文字定稿。</td></tr>
+<tr><td>内存与稳定性</td><td>初始预算：语音带来的峰值 PSS 增量 ≤1.5 GiB，超预算须记录并重新评审目标设备；连续 30 次会话无持续增长、崩溃、ANR 或普通键盘卡顿。模型释放后以实际映射 / 存活对象确认回收，不要求操作系统缓存瞬间归零。</td></tr>
+<tr><td>隐私与离线</td><td>本地准备完成后飞行模式全链路可用；无识别网络请求、音频文件或正文日志。隐藏键盘 / 锁屏 / 服务结束后麦克风停止，系统静音、权限撤回和占用均有可理解提示。</td></tr>
+</tbody></table></div>
+<h3>必须覆盖的正确性用例</h3>
+<ul>
+<li><code>“明天” → “明天下午” → “明天下午三点。”</code> 只占一段 composing，抬手只留一份全文；另外覆盖 partial 回改为更短文本、空结果、标点、emoji / UTF-16 长度与 final 重复回调。</li>
+<li>已有拼音 preedit 后启动语音、短按选词、阈值前横滑、长按后滑出、多指与 vivo 手动分发；软键取消、ACTION_CANCEL、cancelGestures、主题重建和父视图 detach。</li>
+<li>partial / final 乱序、旧 session 迟到、同 App 同 fieldId 的输入重启、切换 App、用户移动光标 / 选中文字、InputConnection 失效；所有旧结果不得写入新位置。</li>
+<li>冷加载中抬手 / 取消、模型文件缺失或损坏、空间不足、重复加载、模型释放中再次触发、native 调用超时；不发生双 worker 和 use-after-free。</li>
+<li>原生 EditText、多行文本、Compose TextField、浏览器 textarea / contenteditable、聊天输入框、InputFilter 限长、密码字段、全屏提取编辑模式；如宿主 composing 不兼容，明确标记不支持。</li>
+<li>Android 23 兼容路径、现代系统麦克风隐私限制、4 KB / 16 KB arm64、启用 R8 的 Release；其他 ABI 的普通输入法构建与启动正常。</li>
+</ul>
+<p>测试组合：状态机与调度用假采音 / 假识别器测试；composing 和选区使用 instrumentation 测试宿主；真实设备验证音频、JNI、性能和系统生命周期。文档阶段不为未实现功能添加空测试或声称已有测试通过。</p>
+</section>
+
+<section id="review"><h2>11. Review 要点与当前验证状态</h2>
+<p>需求已确定的是“长按空格、按住期间 composing、松手结束、Qwen3-ASR 端内运行”。下面是本文提出的实现选择，可在 review 时调整：</p>
+<div class="scroll"><table><thead><tr><th>待 review 的选择</th><th>本文默认建议</th><th>影响</th></tr></thead><tbody>
+<tr><td>权重交付</td><td>arm64 语音版随包提供权重</td><td>安装后本地准备即可断网使用，但包体和磁盘开销大；首次下载是备选。</td></tr>
+<tr><td>总录音时长</td><td>不设置产品上限</td><td>已按用户要求改为有界音频缓存和窗口；有限实验时长不作为产品限制。资源过载必须明确失败，不能静默丢音。</td></tr>
+<tr><td>现有 preedit</td><td>先将可见 Fcitx preedit 原样定稿</td><td>不丢原输入，但可能把未选词的拼音保留下来；可改为有 preedit 时拒绝启动。</td></tr>
+<tr><td>启用方式</td><td>用户主动选择“离线语音输入”长按行为</td><td>保留已有长按选择；首次启用需录音授权和模型准备。</td></tr>
+</tbody></table></div>
+<p><strong>本轮已完成：</strong>本仓库静态检查、上游调研、固定权重与 AAR 校验、独立 P0 APK 构建安装、NX888J 真机 3 / 8 / 15 / 30 / 60 秒解码、可见测试 IME 的 composing、麦克风回采、内存配置对照与连续解码。第二轮增加了有界 ring、重叠拼接、长时间与麦克风实验。数据、制品和复现工具见 <a href="qwen3-asr-window-p0-report.html">有界窗口 P0 真机报告</a>。</p>
+<p><strong>本轮未完成：</strong>生产空格手势 / 振动 / 权限与模型交付、Fcitx composing 所有权集成、人工口述和完整准确率、通用宿主兼容、Release/R8 与 16 KB 运行验收。当前基线路线未通过 P0；不将短句能力当作整体可发布结论，也不预设产品时长上限。</p>
+</section>
+
+<section id="sources"><h2>12. 来源与复核入口</h2>
+<p class="meta">访问日期：2026-10-31。外部资料证明相应组件能力；本文的时长、延迟、资源预算、状态机与交付策略均为本项目设计建议。</p>
+<ol>
+<li id="s1"><a href="https://github.com/QwenLM/Qwen3-ASR">QwenLM / Qwen3-ASR 官方仓库</a>：模型、推理后端与 streaming 入口。</li>
+<li id="s2"><a href="https://k2-fsa.github.io/sherpa/onnx/qwen3-asr/index.html">sherpa-onnx：Qwen3-ASR</a>：转换模型、平台与语言接口。</li>
+<li id="s3"><a href="https://k2-fsa.github.io/sherpa/onnx/qwen3-asr/pretrained.html">sherpa-onnx：预训练 Qwen3-ASR INT8 模型</a>：模型文件列表、体积与使用方式。</li>
+<li id="s4"><a href="https://github.com/k2-fsa/sherpa-onnx/blob/v2.0.1/sherpa-onnx/kotlin-api/OfflineRecognizer.kt">v2.0.1 Kotlin OfflineRecognizer</a> · <a href="https://github.com/k2-fsa/sherpa-onnx/blob/v2.0.1/kotlin-api-examples/test_offline_qwen3_asr.kt">Qwen Kotlin 示例</a> · <a href="https://github.com/k2-fsa/sherpa-onnx/releases/tag/v2.0.1">发行页</a>。</li>
+<li id="s5"><a href="https://github.com/k2-fsa/sherpa-onnx/blob/935e5ded3d949a8b557ac44ef4dad03a7d2038e7/sherpa-onnx/csrc/sherpa-onnx-vad-microphone-simulated-streaming-asr.cc">sherpa 维护方 simulated-streaming 示例源码快照</a>：重复创建离线 stream，更新当前句文本。</li>
+<li id="s6"><a href="https://developer.android.com/reference/android/view/inputmethod/InputConnection">Android InputConnection API</a>：预编辑、替换与定稿协议。</li>
+<li id="s7"><a href="https://developer.android.com/media/platform/sharing-audio-input">Android：Sharing audio input</a>：录音争用、前后台限制和系统静音行为。</li>
+<li id="s8"><a href="https://developer.android.com/guide/practices/page-sizes">Android：Support 16 KB page sizes</a>：第三方 native 库兼容验证。</li>
+<li id="s9"><a href="https://github.com/QwenLM/Qwen3-ASR/blob/main/LICENSE">Qwen3-ASR Apache-2.0 许可</a>；发布时还需随实际权重和全部依赖附声明。</li>
+</ol>
+</section>
+<footer>fcitx5-android · Qwen3-ASR 语音输入规格 v1.3 · 以真机可复现结果决定是否进入发布。</footer>
+</main></body>
+</html>

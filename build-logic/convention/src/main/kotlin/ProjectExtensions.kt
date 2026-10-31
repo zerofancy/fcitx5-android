@@ -43,7 +43,10 @@ val Project.buildToolsVersion
 
 val Project.buildVersionName
     get() = ep("BUILD_VERSION_NAME", "buildVersionName") {
+        // A version bump takes effect before the corresponding Git tag is created.
         runCmd("git describe --tags --long --always", Versions.baseVersionName)
+            .takeIf { it.startsWith("${Versions.baseVersionName}-") }
+            ?: Versions.baseVersionName
     }
 
 val Project.buildCommitHash

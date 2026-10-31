@@ -140,3 +140,24 @@ configurations {
         exclude(group = "com.louiscad.splitties", module = "splitties-systemservices")
     }
 }
+
+// Weights stay outside Git. A voice APK embeds this pinned, verified model for offline use.
+val bundleVoiceModel = providers.gradleProperty("bundleVoiceModel").map(String::toBoolean)
+    .getOrElse(false)
+require(!bundleVoiceModel || buildAbiOverride == "arm64-v8a") {
+    "The voice edition requires -PbuildABI=arm64-v8a -PbundleVoiceModel=true"
+}
+android.defaultConfig.buildConfigField("boolean", "VOICE_MODEL_BUNDLED", bundleVoiceModel.toString())
+val voiceOutput = layout.buildDirectory.dir("generated/qwen3")
+val prepareVoice = tasks.register<Exec>("prepareVoice") {
+    inputs.property("bundleVoiceModel", bundleVoiceModel)
+    inputs.files(rootProject.file("tools/prepare-voice.py"), rootProject.file("tools/voice-p0/artifacts.json"))
+    outputs.dir(voiceOutput)
+    commandLine("python3", rootProject.file("tools/prepare-voice.py"), "--output", voiceOutput.get().asFile, "--with-model", bundleVoiceModel.toString())
+}
+android.sourceSets.getByName("main").assets.srcDir(voiceOutput.get().dir("assets").asFile)
+android.androidResources.noCompress += listOf("onnx")
+tasks.named("preBuild").configure { dependsOn(prepareVoice) }
+dependencies {
+    implementation(files(voiceOutput.map { it.file("runtime/sherpa-onnx-2.0.1.aar") }).builtBy(prepareVoice))
+}

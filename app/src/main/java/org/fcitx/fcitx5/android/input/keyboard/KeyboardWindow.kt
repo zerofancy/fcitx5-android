@@ -77,6 +77,7 @@ class KeyboardWindow : InputWindow.SimpleInputWindow<KeyboardWindow>(), Essentia
     private val currentKeyboard: BaseKeyboard? get() = keyboards[currentKeyboardName]
 
     private val keyActionListener = KeyActionListener { it, source ->
+        if (service.voiceInput.active && it !is KeyAction.VoiceEndAction) return@KeyActionListener
         if (it is KeyAction.LayoutSwitchAction) {
             switchLayout(it.act)
         } else {

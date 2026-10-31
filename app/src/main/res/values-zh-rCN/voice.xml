@@ -1,0 +1,21 @@
+<resources>
+    <string name="space_behavior_voice">离线语音输入（Qwen3-ASR）</string>
+    <string name="voice_setup">准备离线语音输入</string>
+    <string name="voice_setup_description">Qwen3-ASR 完全在本机识别。内置模型需要约 1 GB 额外存储，识别内存约 2.4 GB。请准备模型并允许麦克风权限，再将“空格键长按行为”设为“离线语音输入”。长按空格说话，松手后定稿。</string>
+    <string name="voice_prepare">准备模型与麦克风权限</string>
+    <string name="voice_preparing">正在准备：%1$s</string>
+    <string name="voice_ready">已准备就绪。请将“空格键长按行为”设为“离线语音输入”。</string>
+    <string name="voice_permission_denied">需要麦克风权限。可点击重试，或在系统应用设置中允许。</string>
+    <string name="voice_prepare_failed">模型准备失败，请检查剩余存储空间后重试。</string>
+    <string name="voice_setup_required">请先到“键盘”设置中打开“准备离线语音输入”。</string>
+    <string name="voice_arm64_required">离线语音输入需要 ARM64 设备。</string>
+    <string name="voice_editor_unavailable">此输入框暂不支持语音输入。</string>
+    <string name="voice_starting">正在启动麦克风…</string>
+    <string name="voice_loading">正在听 · 模型加载中…</string>
+    <string name="voice_listening">正在听 · 松手结束</string>
+    <string name="voice_finishing">正在整理…</string>
+    <string name="voice_release">松手结束</string>
+    <string name="voice_failed">语音输入已停止，已显示文字已保留，请重试。</string>
+    <string name="voice_build_required">请安装 ARM64 语音版以使用离线语音输入。</string>
+    <string name="voice_cancel">取消语音输入</string>
+</resources>

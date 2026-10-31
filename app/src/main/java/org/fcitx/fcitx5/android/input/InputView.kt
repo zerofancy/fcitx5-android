@@ -201,6 +201,24 @@ class InputView(
         }
     }
 
+    private val voiceStatus = android.widget.TextView(themedContext).apply {
+        id = View.generateViewId()
+        gravity = android.view.Gravity.CENTER
+        textSize = 16f
+        setTextColor(theme.candidateTextColor)
+        setBackgroundColor(theme.barColor)
+        isClickable = true
+        isFocusable = false
+        setOnClickListener { service.voiceInput.cancel(clearDraft = true) }
+        visibility = GONE
+    }
+
+    fun showVoiceStatus(text: String?) {
+        voiceStatus.text = text?.let { "$it  ×" }
+        voiceStatus.contentDescription = text?.let { "$it · ${context.getString(org.fcitx.fcitx5.android.R.string.voice_cancel)}" }
+        voiceStatus.visibility = if (text == null) GONE else VISIBLE
+    }
+
     val keyboardView: View
 
     init {
@@ -234,6 +252,10 @@ class InputView(
                 centerHorizontally()
             })
             add(kawaiiBar.view, lParams(matchParent, dp(KawaiiBarComponent.HEIGHT)) {
+                topOfParent()
+                centerHorizontally()
+            })
+            add(voiceStatus, lParams(matchParent, dp(KawaiiBarComponent.HEIGHT)) {
                 topOfParent()
                 centerHorizontally()
             })

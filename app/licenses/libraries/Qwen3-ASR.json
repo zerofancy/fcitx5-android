@@ -1,0 +1,11 @@
+{
+    "uniqueId": "QwenLM/Qwen3-ASR",
+    "name": "Qwen3-ASR",
+    "artifactVersion": "0.6B INT8 68818b2",
+    "description": "Offline speech recognition",
+    "website": "https://github.com/QwenLM/Qwen3-ASR",
+    "tag": "native",
+    "licenses": [
+        "Apache-2.0"
+    ]
+}

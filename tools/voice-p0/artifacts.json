@@ -1,0 +1,137 @@
+{
+  "model_repository": "csukuangfj2/sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25",
+  "model_revision": "68818b2313fe77bd06f6a7c5068ff3ef59d02b8a",
+  "artifacts": [
+    {
+      "path": "sherpa-onnx-2.0.1.aar",
+      "size": 49441341,
+      "sha256": "a8d09d1d32f3eb8520482c6d3d43fae674681c5b050385967c70a3c2c9bf0ee7",
+      "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/v2.0.1/sherpa-onnx-2.0.1.aar"
+    },
+    {
+      "path": "conv_frontend.onnx",
+      "size": 44148281,
+      "git_blob": "530a68f0772939d8f013552a964182eaaab6ccf7",
+      "sha256": "d22dc4423e0940e49884e903d2ea2f7e5567c14fc1aed97e4e26d6b8f208ef9e",
+      "url": "https://huggingface.co/csukuangfj2/sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25/resolve/68818b2313fe77bd06f6a7c5068ff3ef59d02b8a/conv_frontend.onnx"
+    },
+    {
+      "path": "encoder.int8.onnx",
+      "size": 182491662,
+      "git_blob": "f31b3ead3109fbdfe0d1d55d4366769758ce1377",
+      "sha256": "60748d3e6744a57c9c91e1b17424a6c2990567e8adceb0783940c03ed98fa9d9",
+      "url": "https://huggingface.co/csukuangfj2/sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25/resolve/68818b2313fe77bd06f6a7c5068ff3ef59d02b8a/encoder.int8.onnx"
+    },
+    {
+      "path": "decoder.int8.onnx",
+      "size": 755914231,
+      "git_blob": "79a0f0fdae11ad4e13d9bdb7ba1082c6a8a37189",
+      "sha256": "4f6885be5959ae26af3089d38ee7972c5fafbeeb1cf8d5e76eab6d8b61ca5771",
+      "url": "https://huggingface.co/csukuangfj2/sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25/resolve/68818b2313fe77bd06f6a7c5068ff3ef59d02b8a/decoder.int8.onnx"
+    },
+    {
+      "path": "tokenizer/merges.txt",
+      "size": 1671853,
+      "git_blob": "31349551d90c7606f325fe0f11bbb8bd5fa0d7c7",
+      "sha256": "8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5",
+      "url": "https://huggingface.co/csukuangfj2/sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25/resolve/68818b2313fe77bd06f6a7c5068ff3ef59d02b8a/tokenizer/merges.txt"
+    },
+    {
+      "path": "tokenizer/vocab.json",
+      "size": 2776833,
+      "git_blob": "6c49fc63bcb109de13abe49e58f85a4cdba7b679",
+      "sha256": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910",
+      "url": "https://huggingface.co/csukuangfj2/sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25/resolve/68818b2313fe77bd06f6a7c5068ff3ef59d02b8a/tokenizer/vocab.json"
+    },
+    {
+      "path": "tokenizer/tokenizer_config.json",
+      "size": 12487,
+      "git_blob": "bfcb56e2b0b7552ba5cb4f8726d5e89478030ad8",
+      "sha256": "4942d005604266809309cabc9f4e9cb89ce855d59b14681fdc0e1cc62ea26c4c",
+      "url": "https://huggingface.co/csukuangfj2/sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25/resolve/68818b2313fe77bd06f6a7c5068ff3ef59d02b8a/tokenizer/tokenizer_config.json"
+    },
+    {
+      "path": "test_wavs/fast1.wav",
+      "size": 1003794,
+      "git_blob": "0a8942ad7c880f75f95116ef9c468d514b968c65",
+      "sha256": "b43bbd0bd982c3cc88081f64389bf29fe9e9a01287d44f0b15887bc49c2b352a",
+      "url": "https://huggingface.co/csukuangfj2/sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25/resolve/68818b2313fe77bd06f6a7c5068ff3ef59d02b8a/test_wavs/fast1.wav"
+    },
+    {
+      "path": "test_wavs/f1_noise.wav",
+      "size": 1677606,
+      "git_blob": "a3b07a77545904c9dc8cb1cc49706d3a3ede9a95",
+      "sha256": "7ae35f5d8f038e518f3abdeda5f78d71cb2f67c9ca29cb9a49a0b4d0702909bd",
+      "url": "https://huggingface.co/csukuangfj2/sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25/resolve/68818b2313fe77bd06f6a7c5068ff3ef59d02b8a/test_wavs/f1_noise.wav"
+    },
+    {
+      "path": "test_wavs/noise1-en.wav",
+      "size": 2831516,
+      "git_blob": "56d1ec140173125c1fadde8271f11973f56f305d",
+      "sha256": "3664ef02fa664da93d94a1afc271bda31c0f8d07a9f3c74ac6cd1e5aabe8572c",
+      "url": "https://huggingface.co/csukuangfj2/sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25/resolve/68818b2313fe77bd06f6a7c5068ff3ef59d02b8a/test_wavs/noise1-en.wav"
+    },
+    {
+      "path": "test_wavs/raokouling.wav",
+      "size": 1831074,
+      "git_blob": "9d64ee68b559ba22323f0436cb5f2e1b050dd060",
+      "sha256": "3cc59ec494f71135ff5761717e20597f0559b43f793dd72ae4924b86c5e038d8",
+      "url": "https://huggingface.co/csukuangfj2/sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25/resolve/68818b2313fe77bd06f6a7c5068ff3ef59d02b8a/test_wavs/raokouling.wav"
+    },
+    {
+      "path": "test_wavs/transcript.txt",
+      "size": 5386,
+      "git_blob": "c993980790c857608cc7b844a6c319d5c485aa1f",
+      "sha256": "9cab82a507e1e5a7743336f2e40fabdaa1eb6181818d7a3768925abc03effd24",
+      "url": "https://huggingface.co/csukuangfj2/sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25/resolve/68818b2313fe77bd06f6a7c5068ff3ef59d02b8a/test_wavs/transcript.txt"
+    },
+    {
+      "path": "README.md",
+      "size": 328,
+      "git_blob": "52e9da7c7028021280fa2d69b5d3735cc3c196ea",
+      "sha256": "bbc6dbeb9dce5b4ed0e839057137e9cba4bf05c5797277d36a80e22594414e14",
+      "url": "https://huggingface.co/csukuangfj2/sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25/resolve/68818b2313fe77bd06f6a7c5068ff3ef59d02b8a/README.md"
+    }
+  ],
+  "fixtures": [
+    {
+      "path": "fixtures/fast1-16k.wav",
+      "sha256": "3f43f8c35c5ba41901de6b60148e31b2c3d28a3056e3030307add28a91ec6521",
+      "seconds": 11.380375,
+      "derived_from": "model/test_wavs/fast1.wav"
+    },
+    {
+      "path": "fixtures/raokouling-16k.wav",
+      "sha256": "cc6276f409a160d03c7ae1c55961b86c335d67cf3a80217a8df2440d75b7646c",
+      "seconds": 20.76,
+      "derived_from": "model/test_wavs/raokouling.wav"
+    },
+    {
+      "path": "fixtures/noise1-en-16k.wav",
+      "sha256": "4132d32b1004ee6d8a7264bd37ab329ed258708ccb662a5cc49862f1f2624563",
+      "seconds": 88.193,
+      "derived_from": "model/test_wavs/noise1-en.wav"
+    },
+    {
+      "path": "fixtures/f1_noise-16k.wav",
+      "sha256": "b3ade4896b43f931bc557840970cbe0cad79d9f475a88ac140bbea16f010deaf",
+      "seconds": 19.02,
+      "derived_from": "model/test_wavs/f1_noise.wav"
+    },
+    {
+      "path": "fixtures/silence-16k.wav",
+      "sha256": "d303811b8c84619667cd0501342f84ec6cbe69f7aa3856dcf52fabda374c92b8",
+      "seconds": 3,
+      "derived_from": "generated PCM; noise seed 20261031, uniform integer [-1000,1000]"
+    },
+    {
+      "path": "fixtures/noise-16k.wav",
+      "sha256": "e7188415b7c640db7c45b446ef5c0ae38da7822689dba08463a30ca8940ec87f",
+      "seconds": 3,
+      "derived_from": "generated PCM; noise seed 20261031, uniform integer [-1000,1000]"
+    }
+  ],
+  "runtime_repository": "https://github.com/k2-fsa/sherpa-onnx",
+  "runtime_tag": "v2.0.1",
+  "runtime_source_revision": "af2d8d81dbfa61c4cea4c568da78f3982edca005"
+}

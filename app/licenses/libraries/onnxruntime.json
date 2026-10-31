@@ -1,0 +1,11 @@
+{
+    "uniqueId": "microsoft/onnxruntime",
+    "name": "ONNX Runtime",
+    "artifactVersion": "1.28.2",
+    "description": "CPU inference runtime bundled by sherpa-onnx",
+    "website": "https://github.com/microsoft/onnxruntime",
+    "tag": "native",
+    "licenses": [
+        "MIT"
+    ]
+}

@@ -39,5 +39,7 @@ sealed class KeyAction {
 
     data class PickerSwitchAction(val key: PickerWindow.Key? = null) : KeyAction()
 
+    data class VoiceEndAction(val cancelled: Boolean) : KeyAction()
+
     data object SpaceLongPressAction : KeyAction()
 }

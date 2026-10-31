@@ -89,6 +89,11 @@ class CommonKeyActionListener :
 
     val listener by lazy {
         KeyActionListener { action, _ ->
+            if (action is KeyAction.VoiceEndAction) {
+                if (action.cancelled) service.voiceInput.cancel(clearDraft = true) else service.voiceInput.release()
+                return@KeyActionListener
+            }
+            if (service.voiceInput.active) return@KeyActionListener
             when (action) {
                 is FcitxKeyAction -> service.postFcitxJob {
                     sendKey(action.act, action.states.states, action.code)
@@ -173,6 +178,7 @@ class CommonKeyActionListener :
                 is SpaceLongPressAction -> {
                     when (spaceKeyLongPressBehavior) {
                         SpaceLongPressBehavior.None -> {}
+                        SpaceLongPressBehavior.VoiceInput -> service.voiceInput.start()
                         SpaceLongPressBehavior.Enumerate -> service.postFcitxJob {
                             enumerateIme()
                         }

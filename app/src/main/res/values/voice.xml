@@ -1,0 +1,21 @@
+<resources>
+    <string name="space_behavior_voice">Offline voice input (Qwen3-ASR)</string>
+    <string name="voice_setup">Prepare offline voice input</string>
+    <string name="voice_setup_description">Qwen3-ASR runs entirely on this device. The bundled model needs about 1 GB of additional storage and recognition uses about 2.4 GB of memory. Prepare the model and allow microphone access, then choose Offline voice input under Space long press behavior. Hold space to speak; release to finish.</string>
+    <string name="voice_prepare">Prepare model and microphone</string>
+    <string name="voice_preparing">Preparing: %1$s</string>
+    <string name="voice_ready">Ready. Choose Offline voice input under Space long press behavior.</string>
+    <string name="voice_permission_denied">Microphone access is required. Tap to try again, or allow it in Android app settings.</string>
+    <string name="voice_prepare_failed">Model preparation failed. Check available storage and retry.</string>
+    <string name="voice_setup_required">Open Keyboard settings → Prepare offline voice input first.</string>
+    <string name="voice_arm64_required">Offline voice input requires an ARM64 device.</string>
+    <string name="voice_editor_unavailable">Voice input is unavailable in this field.</string>
+    <string name="voice_starting">Starting microphone…</string>
+    <string name="voice_loading">Listening · Loading model…</string>
+    <string name="voice_listening">Listening · Release to finish</string>
+    <string name="voice_finishing">Finishing transcription…</string>
+    <string name="voice_release">Release to finish</string>
+    <string name="voice_failed">Voice input stopped. The displayed text was kept. Please try again.</string>
+    <string name="voice_build_required">Install the ARM64 voice edition to use offline voice input.</string>
+    <string name="voice_cancel">Cancel voice input</string>
+</resources>

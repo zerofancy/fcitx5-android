@@ -1,0 +1,29 @@
+[
+  {
+    "file": "fixtures/window-fast12.wav",
+    "sha256": "5bb6a05ac2b4747e3b0179c456bbb742b2296784aa0626453104352a9820a8bb",
+    "seconds": 12,
+    "language": "zh",
+    "reference_sha256": "aeec446ab3a32d980c02463e22868deeee948880245fd942e968dddacad31706",
+    "source": "fixtures/fast1-16k.wav",
+    "source_sha256": "3f43f8c35c5ba41901de6b60148e31b2c3d28a3056e3030307add28a91ec6521"
+  },
+  {
+    "file": "fixtures/window-zh21.wav",
+    "sha256": "4cad88c77e4fb0a0d4066e8aa3033134b4a5d88881dbaf7932511891713617a4",
+    "seconds": 21,
+    "language": "zh",
+    "reference_sha256": "cf89608e3d06b7c43d9ed87e19f7c0518e370090703b94a587b5b825fe09f9e1",
+    "source": "fixtures/raokouling-16k.wav",
+    "source_sha256": "cc6276f409a160d03c7ae1c55961b86c335d67cf3a80217a8df2440d75b7646c"
+  },
+  {
+    "file": "fixtures/window-en90.wav",
+    "sha256": "2e583458388cdf8ecdf4c13b6f124a0f0a775a6d3eaa24ef69ec3ee2a643da2b",
+    "seconds": 90,
+    "language": "en",
+    "reference_sha256": "4d93ff011aabd7d8f629f2bf8810355f0f441c594fb3e9bb494fa99cdfe86d19",
+    "source": "fixtures/noise1-en-16k.wav",
+    "source_sha256": "4132d32b1004ee6d8a7264bd37ab329ed258708ccb662a5cc49862f1f2624563"
+  }
+]

@@ -153,6 +153,26 @@ abstract class BaseKeyboard(
             }
             if (def is SpaceKey) {
                 spaceKeys.add(this)
+                suppressLongPressFeedback = {
+                    AppPrefs.getInstance().keyboard.spaceKeyLongPressBehavior.getValue() == SpaceLongPressBehavior.VoiceInput
+                }
+                var voiceGesture = false
+                var spaceLabel: CharSequence? = null
+                onLongPressEnd = { cancelled ->
+                    if (voiceGesture) {
+                        voiceGesture = false
+                        (this as? TextKeyView)?.mainText?.text = spaceLabel
+                        onAction(KeyAction.VoiceEndAction(cancelled))
+                    }
+                }
+                // Installed below together with the regular long-press action.
+                onBeforeLongPress = {
+                    voiceGesture = suppressLongPressFeedback?.invoke() == true
+                    if (voiceGesture) (this as? TextKeyView)?.mainText?.let { label ->
+                        spaceLabel = label.text
+                        label.setText(org.fcitx.fcitx5.android.R.string.voice_release)
+                    }
+                }
                 swipeEnabled = spaceSwipeMoveCursor.getValue()
                 swipeRepeatEnabled = true
                 swipeThresholdX = selectionSwipeThreshold
@@ -501,6 +521,7 @@ abstract class BaseKeyboard(
     }
 
     open fun onDetach() {
+        spaceKeys.forEach { it.cancelGestures() }
         releaseAllTouchTargets()
     }
 

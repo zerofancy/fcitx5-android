@@ -1,0 +1,442 @@
+[
+  {
+    "id": "win-basic-c2o1",
+    "files": [
+      {
+        "name": "win-basic-c2o1.jsonl",
+        "sha256": "ee40593443f50df4e4d799d2ec2dc0c7db3634254d6fff3ed11b1bc16ed4a917",
+        "bytes": 36753
+      },
+      {
+        "name": "win-basic-c2o1-device.json",
+        "sha256": "0e6feebf16a599b17699da76a33068fc020cd0f9964e4ef9137c5c11f60b2b86",
+        "bytes": 30070
+      },
+      {
+        "name": "win-basic-c2o1-logcat.txt",
+        "sha256": "bad3ede3f37f90cf9cc0d5f00a316dd02e72f0d9a7b0a95f61a9ae7b138ae914",
+        "bytes": 63645
+      }
+    ]
+  },
+  {
+    "id": "win-c2o05",
+    "files": [
+      {
+        "name": "win-c2o05.jsonl",
+        "sha256": "249bfde778918a1517cec21f264557fc51dbf6d9d5993b4f42cbf6bc9cefe2f5",
+        "bytes": 40121
+      },
+      {
+        "name": "win-c2o05-device.json",
+        "sha256": "8574a02f621f2640905a293dc38234c843a78b313fd687a4da80997953ae3ef3",
+        "bytes": 30029
+      },
+      {
+        "name": "win-c2o05-logcat.txt",
+        "sha256": "fcf7f8cd2e24791312fa4585be0eecaee3a706d5dcc8d89734ba3e8067ba705d",
+        "bytes": 68163
+      }
+    ]
+  },
+  {
+    "id": "win-c2o1-180",
+    "files": [
+      {
+        "name": "win-c2o1-180.jsonl",
+        "sha256": "813447b3614d219d5dbdc657fa94bb4c0c959c021b59150675eee07875465032",
+        "bytes": 1408639
+      },
+      {
+        "name": "win-c2o1-180-device.json",
+        "sha256": "0415bdba08b675e2233d92d7850a4ce155d32d9c3e9eed0742532f02b4e6e2bb",
+        "bytes": 30072
+      },
+      {
+        "name": "win-c2o1-180-logcat.txt",
+        "sha256": "16fd05b459f280b547128b1f75be5699e008fea494e7b65f3cd98dfc766d8012",
+        "bytes": 1278236
+      }
+    ]
+  },
+  {
+    "id": "win-c2o1-60",
+    "files": [
+      {
+        "name": "win-c2o1-60.jsonl",
+        "sha256": "9f73e7f7915c94beedd2da4552ab5aeaee71f1d03b06da1c21bd5674b17eb664",
+        "bytes": 323371
+      },
+      {
+        "name": "win-c2o1-60-device.json",
+        "sha256": "bfbcc85903b8a792e7a7498a1321d68d4fbf775078546c800dc028a09ccb76c6",
+        "bytes": 30066
+      },
+      {
+        "name": "win-c2o1-60-logcat.txt",
+        "sha256": "1bd5366b6cae7c6ffa426fe0e192d4f4aa00e52fc2de078bd697be3fdb94a9c0",
+        "bytes": 383015
+      }
+    ]
+  },
+  {
+    "id": "win-c2o1-en90",
+    "files": [
+      {
+        "name": "win-c2o1-en90.jsonl",
+        "sha256": "b9acbdea84bc2c80b2f6414e1a454983ffbe1a58aad180d8a2405f9144027fcc",
+        "bytes": 327031
+      },
+      {
+        "name": "win-c2o1-en90-device.json",
+        "sha256": "576a5d2097267b3938006454ea2a5eb5092abb159c991fa7bf8c16bb16a6a132",
+        "bytes": 30070
+      },
+      {
+        "name": "win-c2o1-en90-logcat.txt",
+        "sha256": "b36c327774efb2253ca09d5a5e271a3315be87f2333694b4887c43acaeef4df7",
+        "bytes": 395315
+      }
+    ]
+  },
+  {
+    "id": "win-c2o1-zh21",
+    "files": [
+      {
+        "name": "win-c2o1-zh21.jsonl",
+        "sha256": "b7faf60268320355281588e63e2cad0264a58370158ea8d18401f9a78dbc9902",
+        "bytes": 50031
+      },
+      {
+        "name": "win-c2o1-zh21-device.json",
+        "sha256": "f97cdf98fbe083942a5aed107d474e1939964ce993180b9dad479c4ace5dba8c",
+        "bytes": 30067
+      },
+      {
+        "name": "win-c2o1-zh21-logcat.txt",
+        "sha256": "802cd0b3153ba82bf60a00411c668040f5f2cbad1dac536e4cc40753d32cb0dc",
+        "bytes": 78816
+      }
+    ]
+  },
+  {
+    "id": "win-c4o1",
+    "files": [
+      {
+        "name": "win-c4o1.jsonl",
+        "sha256": "d42e7b9813e314a2ad742bceca7f4e3a5bca782ea2d65307b7cf97261a9404c3",
+        "bytes": 32607
+      },
+      {
+        "name": "win-c4o1-device.json",
+        "sha256": "ca8de96246441f2aff5ffced39edaf8ff66a5257051dc1d0fb421fe7d12789d3",
+        "bytes": 30030
+      },
+      {
+        "name": "win-c4o1-logcat.txt",
+        "sha256": "004d0c6ae7a26e00b04f324cd02758a2d0a3ae3bed22ae2d0e79d8391d62dae1",
+        "bytes": 56973
+      }
+    ]
+  },
+  {
+    "id": "win-c6o1-60",
+    "files": [
+      {
+        "name": "win-c6o1-60.jsonl",
+        "sha256": "f9a87a6206feab7d074b74c88c2c2eae3044124fa2ca8d7637a4e2c48989bb3a",
+        "bytes": 143964
+      },
+      {
+        "name": "win-c6o1-60-device.json",
+        "sha256": "c35ccdc05f499cc43d9a18e8e4e63602229375b15dd078b5a6c725a76a5dae78",
+        "bytes": 30067
+      },
+      {
+        "name": "win-c6o1-60-logcat.txt",
+        "sha256": "d58ce3a308535d47cd525d59bc511ea9988083bdd976469990cfe59220f42794",
+        "bytes": 181559
+      }
+    ]
+  },
+  {
+    "id": "win-c6o1-zh21",
+    "files": [
+      {
+        "name": "win-c6o1-zh21.jsonl",
+        "sha256": "3c7037a42c7bc07085473b635aae8e98ab1b4a6fa268e167bd44cf86f4723488",
+        "bytes": 32743
+      },
+      {
+        "name": "win-c6o1-zh21-device.json",
+        "sha256": "375dd9ff31b74be1673b0a700e208e3a27f27ae9bb2230d5ad2f7a5722cafd80",
+        "bytes": 30068
+      },
+      {
+        "name": "win-c6o1-zh21-logcat.txt",
+        "sha256": "cff63765d10ef201097484ade22bca4b17c4992cb1780dc5b76c45f6f0b62b85",
+        "bytes": 58750
+      }
+    ]
+  },
+  {
+    "id": "win-c6o1",
+    "files": [
+      {
+        "name": "win-c6o1.jsonl",
+        "sha256": "41f049f3c8dd75611f243db039111d5c031336b41fabf9e8b0aac3fd14895dc1",
+        "bytes": 29141
+      },
+      {
+        "name": "win-c6o1-device.json",
+        "sha256": "03c536a42fabe51a61d3de9f4aee8cf8d98d1246e06e11008e3211bcef8b82d4",
+        "bytes": 30030
+      },
+      {
+        "name": "win-c6o1-logcat.txt",
+        "sha256": "09ac728524199f7d3e0f6b3f8d74b9d783b5e40d32f50240c414bf4386e1667b",
+        "bytes": 54272
+      }
+    ]
+  },
+  {
+    "id": "win-compact-c1o05-60",
+    "files": [
+      {
+        "name": "win-compact-c1o05-60.jsonl",
+        "sha256": "4695a9820afb45b97b56c9a77363440b5c2cfd82ec86568da90ba0c8bfc917e1",
+        "bytes": 34316
+      },
+      {
+        "name": "win-compact-c1o05-60-device.json",
+        "sha256": "e79aba282dfe78f82d6569614a619db846b94ae460afbe973a39ed8a9a621874",
+        "bytes": 30082
+      },
+      {
+        "name": "win-compact-c1o05-60-logcat.txt",
+        "sha256": "75de946519d504b0516324de88b6e7a48ab9ba13d4c58de48a32fa044e3b2475",
+        "bytes": 60523
+      }
+    ]
+  },
+  {
+    "id": "win-compact-c2o05",
+    "files": [
+      {
+        "name": "win-compact-c2o05.jsonl",
+        "sha256": "c37b3391d8880a8df814446a9cf742500f49e8344147bb664b160fe80a338999",
+        "bytes": 21669
+      },
+      {
+        "name": "win-compact-c2o05-device.json",
+        "sha256": "21a8e412b797438356b7ce86a0a1b8458f526c3aca5426bb66ad85a9fcffcc4b",
+        "bytes": 30047
+      },
+      {
+        "name": "win-compact-c2o05-logcat.txt",
+        "sha256": "ccbfd898eb688168f6339d0d29b1555b72bb1017d212b4c6b8ffcf7da1bd82fd",
+        "bytes": 45975
+      }
+    ]
+  },
+  {
+    "id": "win-confirm-c2o1-12",
+    "files": [
+      {
+        "name": "win-confirm-c2o1-12.jsonl",
+        "sha256": "9294cc100f7167d545a1890c7996d07ef3f395e94d6ca3d213a99fe95a81a782",
+        "bytes": 486681
+      },
+      {
+        "name": "win-confirm-c2o1-12-device.json",
+        "sha256": "d80fca5766bdfd0a1c6480c6814b480b66bc2b84a7b67e4f33f67d8b70b0c4fb",
+        "bytes": 30083
+      },
+      {
+        "name": "win-confirm-c2o1-12-logcat.txt",
+        "sha256": "07dce168580b18f93eae7face7ecc4899a09c1dd8e419600fa2fddda585dc449",
+        "bytes": 564951
+      }
+    ]
+  },
+  {
+    "id": "win-mic-c2o1-24",
+    "files": [
+      {
+        "name": "win-mic-c2o1-24.jsonl",
+        "sha256": "46db58b2473b6432a13ccda380042c8d859de8b6dcef7a546ab319f723937f4d",
+        "bytes": 66674
+      },
+      {
+        "name": "win-mic-c2o1-24-device.json",
+        "sha256": "3bd83a37987c1910f5dff265fc144dd26d90bcc4c1766f33410f35d680f4ef9c",
+        "bytes": 30234
+      },
+      {
+        "name": "win-mic-c2o1-24-logcat.txt",
+        "sha256": "ee1fd794297f46f0403b6c0e9aa8990599bf2899770f512fdc89c8ed4e5f1073",
+        "bytes": 98357
+      }
+    ]
+  },
+  {
+    "id": "win-noarena-c2o1-60",
+    "files": [
+      {
+        "name": "win-noarena-c2o1-60.jsonl",
+        "sha256": "73d0db97ce2f2386869edef4674e3dcb1c2a01f0d25b90aca451b403303bb429",
+        "bytes": 212379
+      },
+      {
+        "name": "win-noarena-c2o1-60-device.json",
+        "sha256": "38fe5bb8aab1b19975a3e4800df9f109026e5dd7ff280220d6b0b78ca1328394",
+        "bytes": 30083
+      },
+      {
+        "name": "win-noarena-c2o1-60-logcat.txt",
+        "sha256": "46970d8b475bcf063aa49f8409ee5bb05df9dec5eafae2db4aefd0c3c78e0d3c",
+        "bytes": 257857
+      }
+    ]
+  },
+  {
+    "id": "win-ref-fast12",
+    "files": [
+      {
+        "name": "win-ref-fast12.jsonl",
+        "sha256": "b042e539c985ada2fea38cb68087b2fb62c93bbe499f6696db6f20f892276769",
+        "bytes": 4569
+      },
+      {
+        "name": "win-ref-fast12-device.json",
+        "sha256": "4b43e0f6aa807a9f3e4b260e654ac0b458af5815971329e0cb593c95ddda6eab",
+        "bytes": 30036
+      },
+      {
+        "name": "win-ref-fast12-logcat.txt",
+        "sha256": "e0648ba2a1c85b69356a18a4eaf091fdd632a002c6b5ed9aff99b822c6e2c49c",
+        "bytes": 5810
+      }
+    ]
+  },
+  {
+    "id": "win-ref-zh21",
+    "files": [
+      {
+        "name": "win-ref-zh21.jsonl",
+        "sha256": "03f6347394a8ec6be695159e2cc3d890f15cf6d820f86b6394a47f905fc024f4",
+        "bytes": 5813
+      },
+      {
+        "name": "win-ref-zh21-device.json",
+        "sha256": "b49401bb1114c2af3b23d93acc9bc98025abffc30b93082200166d0d5b2f805a",
+        "bytes": 30062
+      },
+      {
+        "name": "win-ref-zh21-logcat.txt",
+        "sha256": "8b0975296919efa2174d8a9957c4e821cd8e2421d1e7d516ff5ae2b9b9836b0a",
+        "bytes": 8400
+      }
+    ]
+  },
+  {
+    "id": "win-smoke-c2o1",
+    "files": [
+      {
+        "name": "win-smoke-c2o1.jsonl",
+        "sha256": "6a8a6aa1a3f2533d7c225e120c95a346238d6e56953d3b417736e8f37a4f6e70",
+        "bytes": 36591
+      },
+      {
+        "name": "win-smoke-c2o1-device.json",
+        "sha256": "7a376bdaf994b36c275fa180517d8381d59762668040fd6f24437f9a6dc2f53a",
+        "bytes": 30041
+      },
+      {
+        "name": "win-smoke-c2o1-logcat.txt",
+        "sha256": "41f0fab07ad70df6a56d35156ba40196d85c2178116513ffc066e51a07930bd0",
+        "bytes": 64197
+      }
+    ]
+  },
+  {
+    "id": "win-v2-c2o2",
+    "files": [
+      {
+        "name": "win-v2-c2o2.jsonl",
+        "sha256": "3c36552f654f957e53b55d2d1f65dcee4fca080b379a9adb61de731f0c16111e",
+        "bytes": 25928
+      },
+      {
+        "name": "win-v2-c2o2-device.json",
+        "sha256": "7b2c4df8a51bcae9364210bdd9458834eb08a34fafbdc489fddca2e712e16b02",
+        "bytes": 30064
+      },
+      {
+        "name": "win-v2-c2o2-logcat.txt",
+        "sha256": "099234731c127cd983dc98a94e8d9f5928c272d3ec36f69d92fc3250f497d2d8",
+        "bytes": 48926
+      }
+    ]
+  },
+  {
+    "id": "win-v2-c3o15",
+    "files": [
+      {
+        "name": "win-v2-c3o15.jsonl",
+        "sha256": "4f32039363342e359c0939010414379e6dc83572d4ecb48386f34d54fb0ea902",
+        "bytes": 26748
+      },
+      {
+        "name": "win-v2-c3o15-device.json",
+        "sha256": "a14948608be95c469cb9dfc3dfbc60f0e5f7f5ece6687af491cc5a75d9ac2980",
+        "bytes": 30066
+      },
+      {
+        "name": "win-v2-c3o15-logcat.txt",
+        "sha256": "38a34a756aa29d6dd40f6369f8baf83a3b2fc2d4fa0677baeaee70fdbb23ff3a",
+        "bytes": 51631
+      }
+    ]
+  },
+  {
+    "id": "win-v2-c4o2",
+    "files": [
+      {
+        "name": "win-v2-c4o2.jsonl",
+        "sha256": "20be8711e75112aee1cf4d0f6f32a017f51c2dccfd5fdcde199fcb64c7492472",
+        "bytes": 25419
+      },
+      {
+        "name": "win-v2-c4o2-device.json",
+        "sha256": "dafe73105ec9370955f598ea7c673151210ded2b3400122517e013437b2e0e75",
+        "bytes": 30066
+      },
+      {
+        "name": "win-v2-c4o2-logcat.txt",
+        "sha256": "6a51d456de56e4ed3fef1fc091d309c26d91b59a3a5d060e18e098bf7943d429",
+        "bytes": 50203
+      }
+    ]
+  },
+  {
+    "id": "win-v2-compact-c1o05",
+    "files": [
+      {
+        "name": "win-v2-compact-c1o05.jsonl",
+        "sha256": "04976111853af64705af6ec4f314dda377c23059fa836ea8ba05014da6ae043b",
+        "bytes": 24123
+      },
+      {
+        "name": "win-v2-compact-c1o05-device.json",
+        "sha256": "90e98a8c343710327ebc054aea525ec09eb4a0f6c01bd9a554c430249097b51b",
+        "bytes": 30082
+      },
+      {
+        "name": "win-v2-compact-c1o05-logcat.txt",
+        "sha256": "33c02602564ab922c7b0595d77aaefe4e03938019f1cb4c3f02d32ddddb9628a",
+        "bytes": 49123
+      }
+    ]
+  }
+]

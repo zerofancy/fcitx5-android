@@ -1,0 +1,11 @@
+{
+    "uniqueId": "k2-fsa/sherpa-onnx",
+    "name": "sherpa-onnx",
+    "artifactVersion": "2.0.1",
+    "description": "Offline speech recognition",
+    "website": "https://github.com/k2-fsa/sherpa-onnx",
+    "tag": "native",
+    "licenses": [
+        "Apache-2.0"
+    ]
+}

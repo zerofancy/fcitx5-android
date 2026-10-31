@@ -99,6 +99,26 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
 
     private lateinit var decorView: View
     private lateinit var contentView: FrameLayout
+    val voiceInput by lazy { org.fcitx.fcitx5.android.input.voice.VoiceInputController(this) }
+
+    fun showVoiceStatus(text: String?) { inputView?.showVoiceStatus(text) }
+    fun voiceMessage(text: String) { android.widget.Toast.makeText(this, text, android.widget.Toast.LENGTH_LONG).show() }
+    fun voiceStartedFeedback() { InputFeedbacks.hapticFeedback(decorView, longPress = true) }
+    fun setVoiceComposing(text: String): Boolean {
+        val ic = currentInputConnection ?: return false
+        val start = if (composing.isEmpty()) selection.latest.start else composing.start
+        selection.predict(start + text.length)
+        val accepted = ic.setComposingText(text, 1)
+        if (text.isEmpty()) composing.clear() else composing.update(start, start + text.length)
+        composingText = FormattedText(arrayOf(text), intArrayOf(0), text.length)
+        return accepted
+    }
+
+    fun clearVoiceDraft() {
+        if (composing.isNotEmpty() && selection.latest.start == composing.end &&
+            selection.latest.end == composing.end) setVoiceComposing("")
+    }
+
     private var inputView: InputView? = null
     private var candidatesView: CandidatesView? = null
 
@@ -148,10 +168,12 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
     )
 
     private fun replaceInputView(theme: Theme): InputView {
+        voiceInput.cancel()
         val newInputView = InputView(this, fcitx, theme)
         setInputView(newInputView)
         inputDeviceMgr.setInputView(newInputView)
         inputView = newInputView
+        newInputView.showVoiceStatus(voiceInput.status)
         return newInputView
     }
 
@@ -230,6 +252,9 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
     }
 
     private fun handleFcitxEvent(event: FcitxEvent<*>) {
+        if (voiceInput.active && (event is FcitxEvent.CommitStringEvent ||
+                event is FcitxEvent.ClientPreeditEvent || event is FcitxEvent.KeyEvent ||
+                event is FcitxEvent.DeleteSurroundingEvent)) return
         when (event) {
             is FcitxEvent.CommitStringEvent -> {
                 commitText(event.data.text, event.data.cursor)
@@ -643,6 +668,7 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
+        if (voiceInput.active) voiceInput.cancel(clearDraft = keyCode == KeyEvent.KEYCODE_BACK)
         // request to show floating CandidatesView when pressing physical keyboard
         if (inputDeviceMgr.evaluateOnKeyDown(event, this)) {
             postFcitxJob {
@@ -725,6 +751,7 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
     }
 
     override fun onStartInput(attribute: EditorInfo, restarting: Boolean) {
+        voiceInput.cancel()
         // update selection as soon as possible
         // sometimes when restarting input, onUpdateSelection happens before onStartInput, and
         // initialSel{Start,End} is outdated. but it's the client app's responsibility to send
@@ -861,6 +888,14 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
         updateIndex: Int
     ) {
         if (selection.consume(newSelStart, newSelEnd)) {
+            if (voiceInput.active) {
+                if (composing.isNotEmpty() && newSelStart == composing.end && newSelEnd == composing.end &&
+                    (newComposingStart != composing.start || newComposingEnd != composing.end)) {
+                    voiceInput.cancel()
+                    voiceMessage(getString(R.string.voice_editor_unavailable))
+                }
+                return
+            }
             // try restore composing range in case it was dropped by InputFilter
             // but only when prediction matches, since InputFilter can also change editor content
             // ref:
@@ -873,6 +908,10 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
         } else {
             // cursor update can't match any prediction: it's treated as a user input
             selection.resetTo(newSelStart, newSelEnd)
+        }
+        if (voiceInput.active) {
+            voiceInput.cancel()
+            return
         }
         // skip selection range update, we only care about selection cursor (zero width) here
         if (newSelStart != newSelEnd) return
@@ -1048,6 +1087,7 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
     }
 
     override fun onFinishInputView(finishingInput: Boolean) {
+        voiceInput.cancel()
         Timber.d("onFinishInputView: finishingInput=$finishingInput")
         decorLocationUpdated = false
         inputDeviceMgr.onFinishInputView()
@@ -1064,6 +1104,7 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
     }
 
     override fun onFinishInput() {
+        voiceInput.cancel()
         Timber.d("onFinishInput")
         postFcitxJob {
             focus(false)
@@ -1072,6 +1113,7 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
     }
 
     override fun onUnbindInput() {
+        voiceInput.cancel()
         cachedKeyEvents.evictAll()
         cachedKeyEventIndex = 0
         cursorUpdateIndex = 0
@@ -1083,7 +1125,13 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
         }
     }
 
+    override fun onTrimMemory(level: Int) {
+        super.onTrimMemory(level)
+        voiceInput.trimMemory()
+    }
+
     override fun onDestroy() {
+        voiceInput.destroy()
         recreateInputViewPrefs.forEach {
             it.unregisterOnChangeListener(recreateInputViewListener)
         }

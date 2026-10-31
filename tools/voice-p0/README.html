@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Qwen3-ASR P0 真机验证工具</title><style>
+body{max-width:960px;margin:40px auto;padding:0 22px;font:16px/1.85 system-ui,sans-serif;color:#203442}h1,h2{line-height:1.4}pre{padding:18px;background:#edf2f5;overflow:auto;border-radius:8px}code{font-size:.88em}a{color:#086b88}li{margin:8px 0}.note{background:#fff1d7;padding:18px;border-left:4px solid #ad7a13}
+</style></head><body>
+<h1>Qwen3-ASR P0 真机验证工具</h1>
+<p>独立 Android 工程，包名 <code>org.fcitx.voicep0</code>。不修改生产 Fcitx 的键盘、偏好或 native 引擎。使用真实 sherpa-onnx AAR 和固定 Qwen3-ASR INT8 ONNX 模型，在设备 CPU 上解码。</p>
+<p><a href="../../docs/qwen3-asr-voice-input-spec.html">功能 spec</a> · <a href="../../docs/qwen3-asr-p0-report.html">2026-10-31 真机报告</a> · <a href="artifacts.json">制品清单与哈希</a></p>
+<h2>准备与部署</h2>
+<p>需要本项目的 Gradle wrapper、JDK 21、Android SDK 36、adb、Python 3、ffmpeg；真机为 arm64。仓库根目录执行：</p>
+<pre><code>python3 tools/voice-p0/prepare.py
+python3 tools/voice-p0/deploy.py --serial DEVICE_SERIAL</code></pre>
+<p>prepare 将固定版本输入保存到 <code>~/.cache/fcitx5-voice-p0/</code>，校验 AAR SHA-256、模型 LFS SHA-256 / Git blob hash，并生成 16 kHz PCM16 测试音频。原始输入和大文件不进 Git。deploy 构建测试 APK，通过 run-as 将模型及音频写入应用私有目录，逐文件复核设备端 SHA-256，并授予测试录音权限。</p>
+<p>Android 工程位于本目录，独立于仓库主 settings.gradle.kts，因此不要求重编全部 Fcitx C++ 库。AAR 最小 API 21，本工具最小 API 23、target/compile API 36，仅打包 arm64。</p>
+<h2>运行实验</h2>
+<pre><code># 整段解码，2 个线程，8 秒中文，重复 3 次
+python3 tools/voice-p0/run.py zh8-example --serial DEVICE_SERIAL \
+  --mode offline --seconds 8 --threads 2 --repeats 3 \
+  --wave fixtures/raokouling-16k.wav
+
+# 按真实时间提供音频前缀，在测试 IME 中更新宿主 composing
+python3 tools/voice-p0/run.py ime8-example --serial DEVICE_SERIAL \
+  --mode ime-replay --seconds 8 --threads 2 --repeats 10 \
+  --wave fixtures/fast1-16k.wav
+
+# 手机扬声器播放已知语音，同时通过真实麦克风采集
+python3 tools/voice-p0/run.py mic8-example --serial DEVICE_SERIAL \
+  --mode ime-mic --seconds 8 --threads 2 --repeats 3 \
+  --wave fixtures/fast1-16k.wav
+
+python3 tools/voice-p0/analyze.py</code></pre>
+<p>每次运行使用全新的 id。run.py 强制停止的只有测试包；IME 模式会临时启用并选择测试 IME，结束或异常时恢复原默认输入法，并恢复测试 IME 的原启用状态。运行期间不要手动切换输入框或隐藏键盘，否则本次实验会取消。每次 run 启动新进程，模型仅加载一次，多个 repeat 复用模型。</p>
+<p>从桌面手动打开测试应用只显示测试宿主，不自动加载模型或采音。测试 IME 仅向本测试宿主写入，不在其他应用中启动基准任务。</p>
+<p>ime-mic 会将手机媒体音量临时提升到至少 8 档（15 档设备），结束后恢复原值，并优先路由到内置扬声器。脚本也提供音量恢复兜底。声学回采可能受回声消除、房间和音量影响，须同时检查 RMS 与转写内容，不能只凭产生了文字判定成功。</p>
+<p>内存对照参数：<code>--memory-mode default|no-arena|no-prepack|compact</code>。no-arena 关闭 CPU arena 和 memory pattern；no-prepack 关闭权重预打包；compact 同时关闭三项。不要把内存下降视为免费优化，应一起检查速度与输出差异。</p>
+<div class="note">若 host 被强制终止或 USB 断开，finally 无法保证执行。可用 <code>adb shell ime set 原输入法ID</code> 恢复；每次实验的 <code>*-device.json</code> 都记录了 previous_ime。常规 run 超时和设备端错误会自动执行恢复。</div>
+<h2>模式与测量口径</h2>
+<ul>
+<li><strong>offline：</strong>一次完整解码，测加载和推理耗时；不代表实时转写。</li>
+<li><strong>replay：</strong>Activity 内本地 InputConnection；用于调度诊断。</li>
+<li><strong>ime-replay：</strong>可见 InputMethodService，通过系统 InputConnection 更新 Activity 的 EditText；从 0.8 秒起解码，每次至少新增 500 ms 音频，串行解码，落后时直接取最新前缀。</li>
+<li><strong>ime-mic：</strong>同一调度，输入来自 VOICE_RECOGNITION / 16 kHz / 单声道 / PCM16 的 AudioRecord。已知音频经 AudioTrack 播放，形成声学回采；不是人现场口述，不录制或保存原始麦克风音频。</li>
+<li>原整段模式的 1–60 秒限制是旧测试工具的保护边界，不是产品限制；新窗口模式可超过 60 秒。输入短于测试时长时会循环，并通过 <code>input_tiled</code> 明确标记；上一轮 30/60 秒英文来自 88.193 秒原始音频，不循环。</li>
+<li>所有时间使用 elapsedRealtimeNanos。首条文字从音频流起点计；更新间隔只统计按住期间不同的非空 partial；最终等待从预定停止时间计，包含在途 partial 和最终解码。</li>
+<li>模型参数固定 <code>maxTotalLen=512</code>、<code>maxNewTokens=256</code>，可用 <code>--total-len</code> 对照，但导出图自身上限仍然有效。长音频返回快不能证明完整识别，必须检查 native 截断日志。</li>
+</ul>
+<h2>数据与限制</h2>
+<p>JSONL 原始事件、仅本测试进程的 logcat、设备元数据和 summary.json 保存在本目录 <code>results/</code>（Git 忽略）。事件包括 load、decode、display、宿主 composing span、每秒 PSS/RSS/VmHWM、thermal status、mic start/stop、释放后采样和故障。</p>
+<p>PSS 每秒通过 Debug.MemoryInfo 采样，另在关键阶段采样；其最大值是采样峰值，不保证捕获所有瞬时尖峰。RSS 高水位来自 /proc/self/status。加载是进程首次加载，Android 页缓存未清空。测试默认每次加载后开始，不覆盖冷加载过程中先收音的完整产品交互。</p>
+<p>测试 APK 为 Debug，含真正的预编译 native 引擎；未实现生产长按手势、振动、Fcitx preedit 所有权协议、权限设置页或 Release/R8 验收。停止信号由定时截止模拟，不是物理手指 ACTION_UP。真实麦克风回采验证可见 IME 的录音和 composing 路径，不替代最终人工听写与尾字测试。</p>
+<p>结果不足以给所有 Android 设备设定通用时长。P0 不通过时，应先修改算法 / 模型导出和内存方案，再接入生产输入法。</p>
+<h2>有界窗口第二轮</h2>
+<p><a href="../../docs/qwen3-asr-window-p0-report.html">第二轮真机报告</a>。模型和 AAR 不变；不设置产品总录音时长上限，改为固定容量 ring 和 C 秒新音频 + O 秒左重叠。每段依次处理，不跳段；所有文字仍在一段 composing 内，拼接未满足质量门槛前不接生产。</p>
+<pre><code>python3 tools/voice-p0/prepare_windows.py
+python3 tools/voice-p0/deploy.py --serial DEVICE_SERIAL
+python3 tools/voice-p0/run.py win-EXAMPLE_UNIQUE_ID --serial DEVICE_SERIAL \
+  --mode ime-window --seconds 180 --core-ms 2000 --overlap-ms 1000 \
+  --threads 2 --wave fixtures/window-fast12.wav --timeout 360
+python3 tools/voice-p0/analyze_windows.py</code></pre>
+<p><code>--seconds</code> 是有限实验的定时抬手，不是产品录音上限；新窗口模式可超过 60 秒。<code>--core-ms</code> 指新音频量，最大单次输入为 core+overlap；ring 容量为 3×core+overlap+1 秒。<code>--deadline-aware</code> 额外比较段末减少 partial 的调度策略；并非总是更好。</p>
+<p><code>--mode ime-window-mic</code> 使用同一 ring 和解码调度，输入为真实麦克风回采。试验音量和默认 IME 仍会恢复。发生 ring overrun 时明确失败并保留日志，不通过丢音或无限扩容维持延迟数字。</p>
+<p>prepare_windows 将完整句补静音到 12 / 21 / 90 秒，并保存音频 / 上游参考转写哈希。长时间循环输入会同步重复参考正文。CER/WER 使用上游附带参考，尚未独立人工审听；逐段音频覆盖、文字准确率与刷新速度分别报告。</p>
+<p>完整本轮参数保存在 <code>window-experiments.json</code>；例如 <code>python3 tools/voice-p0/run_window_suite.py --serial DEVICE_SERIAL --suffix retest1 --case win-c2o1-180</code> 可保留新证据复测单组。build_window_report.py 用于原固定完整实验组的报告重建；定制 win-* 试验用 analyze_windows.py 查看结果。</p>
+</body></html>

@@ -51,6 +51,7 @@ open class CustomGestureView(ctx: Context) : FrameLayout(ctx) {
 
     @Volatile
     private var touchMovedOutside = false
+    private var primaryPointerId = -1
 
     @Volatile
     private var longPressTriggered = false
@@ -111,7 +112,12 @@ open class CustomGestureView(ctx: Context) : FrameLayout(ctx) {
                 y < (height + touchSlop)
     }
 
+    var onBeforeLongPress: (() -> Unit)? = null
+    var suppressLongPressFeedback: (() -> Boolean)? = null
+    var onLongPressEnd: ((Boolean) -> Unit)? = null
+
     private fun resetState() {
+        if (longPressTriggered) onLongPressEnd?.invoke(true)
         touchMovedOutside = false
         if (longPressEnabled) {
             longPressTriggered = false
@@ -137,6 +143,7 @@ open class CustomGestureView(ctx: Context) : FrameLayout(ctx) {
     }
 
     fun cancelGestures() {
+        primaryPointerId = -1
         isPressed = false
         resetState()
         // reset double tap state on cancel
@@ -148,9 +155,16 @@ open class CustomGestureView(ctx: Context) : FrameLayout(ctx) {
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        val x = event.x
-        val y = event.y
-        when (event.actionMasked) {
+        if (event.actionMasked == MotionEvent.ACTION_DOWN) primaryPointerId = event.getPointerId(0)
+        if (event.actionMasked == MotionEvent.ACTION_POINTER_DOWN) return true
+        val pointerIndex = event.findPointerIndex(primaryPointerId)
+        if (event.actionMasked == MotionEvent.ACTION_POINTER_UP &&
+            event.getPointerId(event.actionIndex) != primaryPointerId) return true
+        if (pointerIndex < 0 && event.actionMasked != MotionEvent.ACTION_CANCEL) return true
+        val x = if (pointerIndex >= 0) event.getX(pointerIndex) else event.x
+        val y = if (pointerIndex >= 0) event.getY(pointerIndex) else event.y
+        val action = if (event.actionMasked == MotionEvent.ACTION_POINTER_UP) MotionEvent.ACTION_UP else event.actionMasked
+        when (action) {
             MotionEvent.ACTION_DOWN -> {
                 if (!isEnabled) return false
                 drawableHotspotChanged(x, y)
@@ -162,9 +176,10 @@ open class CustomGestureView(ctx: Context) : FrameLayout(ctx) {
                     longPressJob?.cancel()
                     longPressJob = lifecycleScope.launch {
                         delay(longPressDelay.toLong())
-                        if (longPressFeedbackEnabled) {
+                        if (longPressFeedbackEnabled && suppressLongPressFeedback?.invoke() != true) {
                             InputFeedbacks.hapticFeedback(this@CustomGestureView, true)
                         }
+                        onBeforeLongPress?.invoke()
                         longPressTriggered = performLongClick()
                     }
                 }
@@ -188,14 +203,19 @@ open class CustomGestureView(ctx: Context) : FrameLayout(ctx) {
                 }
             }
             MotionEvent.ACTION_UP -> {
+                primaryPointerId = -1
                 isPressed = false
-                InputFeedbacks.hapticFeedback(this, longPress = true, keyUp = true)
-                dispatchGestureEvent(GestureType.Up, event.x, event.y)
+                if (!(longPressTriggered && suppressLongPressFeedback?.invoke() == true)) {
+                    InputFeedbacks.hapticFeedback(this, longPress = true, keyUp = true)
+                }
+                if (longPressTriggered) onLongPressEnd?.invoke(false)
+                dispatchGestureEvent(GestureType.Up, x, y)
                 val shouldPerformClick = !(touchMovedOutside ||
                         longPressTriggered ||
                         repeatStarted ||
                         swipeRepeatTriggered ||
                         gestureConsumed)
+                longPressTriggered = false
                 resetState()
                 if (shouldPerformClick) {
                     if (doubleTapEnabled) {
@@ -240,7 +260,7 @@ open class CustomGestureView(ctx: Context) : FrameLayout(ctx) {
                 return true
             }
             MotionEvent.ACTION_CANCEL -> {
-                dispatchGestureEvent(GestureType.Up, event.x, event.y)
+                dispatchGestureEvent(GestureType.Up, x, y)
                 cancelGestures()
                 return true
             }

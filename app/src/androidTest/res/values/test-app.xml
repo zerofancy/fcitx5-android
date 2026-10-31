@@ -1,0 +1,6 @@
+<resources>
+    <!-- AGP 9 also merges the app's generated resValues into the test APK. -->
+    <item type="mipmap" name="ic_launcher_debug">@android:drawable/sym_def_app_icon</item>
+    <item type="mipmap" name="ic_launcher_round_debug">@android:drawable/sym_def_app_icon</item>
+    <string name="app_name_debug">Fcitx device tests</string>
+</resources>
